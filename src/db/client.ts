@@ -7,8 +7,22 @@ import { SCHEMA_SQL } from './schema'
 
 export type Db = Database.Database
 
-export const DEFAULT_DB_FILE =
-  process.env.ZENFAST_DB_FILE ?? resolve(process.cwd(), 'data/zenfast.db')
+export function resolveDatabaseFile(
+  env: Record<string, string | undefined> = process.env,
+  cwd: string = process.cwd(),
+): string {
+  if (env.ZENFAST_DB_FILE) {
+    return resolve(env.ZENFAST_DB_FILE)
+  }
+
+  if (env.CLEAT_DATA_DIR) {
+    return resolve(env.CLEAT_DATA_DIR, 'zenfast.db')
+  }
+
+  return resolve(cwd, 'data/zenfast.db')
+}
+
+export const DEFAULT_DB_FILE = resolveDatabaseFile()
 
 export function migrate(db: Db): void {
   db.exec(SCHEMA_SQL)

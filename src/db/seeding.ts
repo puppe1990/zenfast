@@ -1,10 +1,10 @@
-import { faker } from '@faker-js/faker'
-
 import { PROTOCOL_CATALOG } from '#/domain/protocol-catalog'
 import { EXPERT_TIPS } from '#/domain/tips-catalog'
 import type { MoodLevel } from '#/domain/types'
 
 import type { Db } from './client'
+import { createDeterministicRandom } from './random'
+import type { SeedRandom } from './random'
 import { logMood, logWater, logWeight } from './repositories/logs'
 import { activateProtocol, updateProfile } from './repositories/profile'
 import { findProtocolBySlug, seedProtocols } from './repositories/protocols'
@@ -23,6 +23,7 @@ export interface SeedOptions {
   now?: Date
   days?: number
   seed?: number
+  random?: SeedRandom
   reset?: boolean
 }
 
@@ -80,10 +81,8 @@ export function resetDatabase(db: Db, profileId: number): void {
 
 export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
   const now = options.now ?? new Date()
-  const days = options.days ?? 30
-  const seed = options.seed ?? 42
-
-  faker.seed(seed)
+  const days = options.days ?? 45
+  const random = options.random ?? createDeterministicRandom(options.seed ?? 42)
 
   seedProtocols(db, PROTOCOL_CATALOG)
   seedTips(db, EXPERT_TIPS)
@@ -123,18 +122,13 @@ export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
         targetHours: profile.dailyTargetHours,
       })
       sessions += 1
-    } else if (faker.number.float({ min: 0, max: 1 }) > 0.06) {
-      const startHour = faker.number.float({
-        min: 19.5,
-        max: 21,
-        fractionDigits: 2,
-      })
+    } else if (random.float(0, 1) > 0.04) {
+      const startHour = random.float(19.5, 21)
       const startedAt = new Date(day.getTime() + (startHour - 24) * 3_600_000)
-      const duration = faker.number.float({
-        min: 15.2,
-        max: 18.6,
-        fractionDigits: 2,
-      })
+      const missedTarget = random.float(0, 1) > 0.88
+      const duration = missedTarget
+        ? random.float(14.6, 15.9)
+        : random.float(16, 18.6)
       const targetMet = duration >= profile.dailyTargetHours
 
       const session = startSession(db, {
@@ -146,31 +140,21 @@ export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
       endSession(db, session.id, {
         endedAt: new Date(startedAt.getTime() + duration * 3_600_000),
         breakFood:
-          targetMet && faker.datatype.boolean({ probability: 0.5 })
-            ? faker.helpers.arrayElement(BREAK_FOODS)
-            : null,
+          targetMet && random.boolean(0.5) ? random.pick(BREAK_FOODS) : null,
         moodNote:
-          targetMet && faker.datatype.boolean({ probability: 0.6 })
-            ? faker.helpers.arrayElement(MOOD_NOTES)
-            : null,
+          targetMet && random.boolean(0.6) ? random.pick(MOOD_NOTES) : null,
         notes: targetMet
-          ? faker.helpers.arrayElement(BALANCE_NOTES)
-          : faker.helpers.arrayElement(PARTIAL_NOTES),
+          ? random.pick(BALANCE_NOTES)
+          : random.pick(PARTIAL_NOTES),
       })
       sessions += 1
     }
 
-    const servings = faker.number.int({
-      min: isToday ? 5 : 4,
-      max: isToday ? 7 : 11,
-    })
+    const servings = random.int(isToday ? 5 : 4, isToday ? 7 : 11)
     for (let index = 0; index < servings; index += 1) {
-      const hour = faker.number.float({
-        min: 7,
-        max: isToday ? now.getHours() : 21,
-      })
+      const hour = random.float(7, isToday ? Math.max(8, now.getHours()) : 21)
       logWater(db, {
-        amountMl: faker.helpers.arrayElement(WATER_SERVING_SIZES),
+        amountMl: random.pick(WATER_SERVING_SIZES),
         loggedAt: new Date(day.getTime() + hour * 3_600_000),
         profileId: profile.id,
       })
@@ -178,10 +162,8 @@ export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
     }
 
     logMood(db, {
-      level: faker.helpers.arrayElement(MOOD_LADDER),
-      note: faker.datatype.boolean({ probability: 0.7 })
-        ? faker.helpers.arrayElement(MOOD_NOTES)
-        : null,
+      level: random.pick(MOOD_LADDER),
+      note: random.boolean(0.7) ? random.pick(MOOD_NOTES) : null,
       loggedAt: new Date(day.getTime() + 9.5 * 3_600_000),
       profileId: profile.id,
     })
@@ -191,11 +173,7 @@ export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
       const progress = 1 - offset / Math.max(days, 1)
       logWeight(db, {
         weightKg: Number(
-          (
-            76.5 -
-            2.8 * progress +
-            faker.number.float({ min: -0.25, max: 0.25 })
-          ).toFixed(1),
+          (76.5 - 2.8 * progress + random.float(-0.25, 0.25)).toFixed(1),
         ),
         loggedAt: new Date(day.getTime() + 8.25 * 3_600_000),
         profileId: profile.id,

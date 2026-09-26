@@ -5,7 +5,7 @@ import {
   getRequestProtocol,
 } from '@tanstack/react-start/server'
 
-import { ensureCatalog } from '#/db/bootstrap'
+import { ensureBootstrapped } from '#/db/bootstrap'
 import { getDb } from '#/db/client'
 import type { Db } from '#/db/client'
 import { logMood, logWater, logWeight } from '#/db/repositories/logs'
@@ -29,7 +29,7 @@ import { buildProtocolsView } from './services/protocols'
 
 function withDb<T>(run: (db: Db) => T): T {
   const db = getDb()
-  ensureCatalog(db)
+  ensureBootstrapped(db)
 
   return run(db)
 }
@@ -55,7 +55,7 @@ export function loadOrigin(): string {
 
 export function loadShell() {
   return withDb((db) => {
-    const profile = ensureCatalog(db)
+    const profile = ensureBootstrapped(db)
     const now = new Date()
     const streak = computeStreak(
       listSessions(db, { profileId: profile.id, limit: 200 }),
@@ -84,7 +84,7 @@ export interface StartFastInput {
 
 export function startFast(input: StartFastInput = {}) {
   return withDb((db) => {
-    const profile = ensureCatalog(db)
+    const profile = ensureBootstrapped(db)
     const protocolId =
       input.protocolId ??
       profile.activeProtocolId ??
@@ -112,7 +112,7 @@ export interface EndFastInput {
 
 export function endFast(input: EndFastInput = {}) {
   return withDb((db) => {
-    const profile = ensureCatalog(db)
+    const profile = ensureBootstrapped(db)
     const active = findActiveSession(db, profile.id)
 
     if (!active) {
@@ -130,7 +130,7 @@ export function endFast(input: EndFastInput = {}) {
 
 export function addWater(amountMl: number) {
   return withDb((db) => {
-    const profile = ensureCatalog(db)
+    const profile = ensureBootstrapped(db)
 
     return logWater(db, {
       amountMl,
@@ -147,7 +147,7 @@ export interface SaveMoodInput {
 
 export function saveMood(input: SaveMoodInput) {
   return withDb((db) => {
-    const profile = ensureCatalog(db)
+    const profile = ensureBootstrapped(db)
 
     return logMood(db, {
       level: input.level,
@@ -160,7 +160,7 @@ export function saveMood(input: SaveMoodInput) {
 
 export function saveWeight(weightKg: number) {
   return withDb((db) => {
-    const profile = ensureCatalog(db)
+    const profile = ensureBootstrapped(db)
 
     return logWeight(db, {
       weightKg,
@@ -172,7 +172,7 @@ export function saveWeight(weightKg: number) {
 
 export function selectProtocol(protocolId: number) {
   return withDb((db) => {
-    ensureCatalog(db)
+    ensureBootstrapped(db)
 
     return activateProtocol(db, protocolId)
   })
@@ -188,7 +188,7 @@ export interface SaveGoalsInput {
 
 export function saveGoals(input: SaveGoalsInput) {
   return withDb((db) => {
-    ensureCatalog(db)
+    ensureBootstrapped(db)
 
     return updateProfile(db, input)
   })
@@ -201,7 +201,7 @@ export interface CreateCustomProtocolInput {
 
 export function createCustomProtocol(input: CreateCustomProtocolInput) {
   return withDb((db) => {
-    ensureCatalog(db)
+    ensureBootstrapped(db)
     const protocol = insertProtocol(
       db,
       buildCustomProtocol(input.fastingHours, input.windowStart),

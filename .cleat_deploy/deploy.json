@@ -1,0 +1,6 @@
+{
+  "memory_max_mb": 512,
+  "node_version": "22",
+  "runtime": "node",
+  "start_command": "node .output/server/index.mjs"
+}
