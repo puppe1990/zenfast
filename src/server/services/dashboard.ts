@@ -20,6 +20,9 @@ import type {
 
 import type { Db } from '#/db/client'
 
+import { listTips } from '#/db/repositories/tips'
+import { tipForDay } from '#/domain/tips'
+
 import { requireProfile } from './tenant'
 import { latestMood, listWaterLogs, waterTotal } from '#/db/repositories/logs'
 import {
@@ -57,6 +60,7 @@ export interface DashboardView {
   }
   streakDays: number
   todayHours: number
+  tipOfTheDay: { title: string; body: string } | null
 }
 
 export function buildDashboard(
@@ -142,6 +146,7 @@ export function buildDashboard(
       endLabel: shiftWindow(windowStart, eatingHours),
       durationHours: eatingHours,
     },
+    tipOfTheDay: tipForDay(listTips(db), now),
     streakDays: computeStreak(listSessions(db, { profileId: profile.id }), now)
       .current,
     todayHours: todayHours(listSessions(db, { profileId: profile.id }), now),

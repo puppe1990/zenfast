@@ -37,6 +37,7 @@ function TimerScreen() {
   const [endSheetOpen, setEndSheetOpen] = useState(false)
   const [moodSheetOpen, setMoodSheetOpen] = useState(false)
   const [breakFood, setBreakFood] = useState(BREAK_FOOD_SUGGESTIONS[0])
+  const [moodNoteInput, setMoodNoteInput] = useState('')
   const [moodLevel, setMoodLevel] = useState<MoodLevel>(
     dashboard.mood?.level ?? 'otima',
   )
@@ -50,9 +51,13 @@ function TimerScreen() {
   })
   const endFast = useAction(async () => {
     await postEndFast({
-      data: { breakFood, notes: 'Encerramento registrado pelo app' },
+      data: {
+        breakFood,
+        moodNote: moodNoteInput.trim() === '' ? undefined : moodNoteInput,
+      },
     })
     setEndSheetOpen(false)
+    setMoodNoteInput('')
   })
   const saveMood = useAction(async () => {
     await postSaveMood({
@@ -105,6 +110,7 @@ function TimerScreen() {
         <NextWindowCard
           durationHours={dashboard.nextWindow.durationHours}
           endLabel={dashboard.nextWindow.endLabel}
+          hint={dashboard.tipOfTheDay?.body ?? null}
           startLabel={dashboard.nextWindow.startLabel}
         />
 
@@ -185,6 +191,21 @@ function TimerScreen() {
               </button>
             ))}
           </div>
+        </div>
+        <div className="space-y-3">
+          <label
+            className="font-label-caps text-label-caps text-on-surface-variant uppercase"
+            htmlFor="end-mood-note"
+          >
+            Sensação somática (opcional)
+          </label>
+          <input
+            className="w-full bg-surface-container-lowest rounded-2xl py-4 px-5 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/50"
+            id="end-mood-note"
+            onChange={(event) => setMoodNoteInput(event.target.value)}
+            placeholder="Alta energia e clareza mental"
+            value={moodNoteInput}
+          />
         </div>
         <button
           className="w-full py-4 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary-container font-headline-sm text-body-lg font-extrabold shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-98 transition-transform disabled:opacity-60"

@@ -7,6 +7,7 @@ import type { Db } from '#/db/client'
 
 import { requireProfile } from './tenant'
 import { listTips } from '#/db/repositories/tips'
+import { tipForDay } from '#/domain/tips'
 import { findProtocolById, listProtocols } from '#/db/repositories/protocols'
 import { findActiveSession, listSessions } from '#/db/repositories/sessions'
 import type { FastingProgress } from '#/domain/fasting'
@@ -79,7 +80,7 @@ export function buildProtocolsView(
     activeProtocol,
     protocols: listProtocols(db, category),
     categories: PROTOCOL_CATEGORIES,
-    tip: listTips(db)[0] ?? null,
+    tip: tipForDay(listTips(db), now),
     goalHours: profile.dailyTargetHours,
     adherenceMet: met,
     adherenceTotal: recentSessions.length,

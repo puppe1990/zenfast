@@ -28,6 +28,19 @@ describe('buildProtocolsView', () => {
     expect(view.tip).not.toBeNull()
   })
 
+  it('rotates the expert tip through the days', () => {
+    const hoje = buildProtocolsView(db, profile.id, now)
+    const amanha = buildProtocolsView(
+      db,
+      profile.id,
+      new Date(now.getTime() + 24 * 3600 * 1000),
+    )
+
+    expect(hoje.tip).not.toBeNull()
+    expect(amanha.tip).not.toBeNull()
+    expect(hoje.tip?.id).not.toBe(amanha.tip?.id)
+  })
+
   it('filters the catalog by category', () => {
     const view = buildProtocolsView(db, profile.id, now, 'iniciante')
 

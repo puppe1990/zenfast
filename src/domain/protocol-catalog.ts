@@ -180,17 +180,27 @@ export function buildCustomProtocol(
     suggestedWindowEnd: shiftWindow(windowStart, eatingHours),
     popularity: 10,
     biomarkers: [
-      { icon: 'tune', label: 'Rotina', value: 'Ajustada', tone: 'primary' },
+      {
+        icon: 'tune',
+        label: 'Janela',
+        value: `${eatingHours}h para comer`,
+        tone: 'primary',
+      },
       {
         icon: 'bolt',
         label: 'Insulina',
-        value: 'Controlada',
+        value: clampedFasting >= 18 ? 'Minimizada' : 'Sensível',
         tone: 'secondary',
       },
       {
         icon: 'autorenew',
         label: 'Autofagia',
-        value: 'Progressiva',
+        value:
+          clampedFasting >= 18
+            ? 'Ativa'
+            : clampedFasting >= 16
+              ? 'Moderada'
+              : 'Leve',
         tone: 'tertiary',
       },
     ],

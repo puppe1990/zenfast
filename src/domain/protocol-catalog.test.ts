@@ -58,6 +58,23 @@ describe('buildCustomProtocol', () => {
     expect(custom.suggestedWindowEnd).toBe('20:00')
   })
 
+  it('derives the biomarkers from the chosen hours', () => {
+    const leve = buildCustomProtocol(14, '10:00')
+    const intenso = buildCustomProtocol(20, '16:00')
+
+    expect(leve.biomarkers[1]).toMatchObject({
+      label: 'Insulina',
+      value: 'Sensível',
+    })
+    expect(leve.biomarkers[2]).toMatchObject({
+      label: 'Autofagia',
+      value: 'Leve',
+    })
+    expect(intenso.biomarkers[0]).toMatchObject({ value: '4h para comer' })
+    expect(intenso.biomarkers[1]).toMatchObject({ value: 'Minimizada' })
+    expect(intenso.biomarkers[2]).toMatchObject({ value: 'Ativa' })
+  })
+
   it('clamps values to the slider bounds', () => {
     expect(buildCustomProtocol(30, '12:00').fastingHours).toBe(
       CUSTOM_PROTOCOL_BOUNDS.maxFastingHours,

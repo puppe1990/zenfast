@@ -43,6 +43,7 @@ import {
   sessionTtlMs,
 } from '#/lib/session-cookie'
 
+import { syncAchievements } from './services/achievements'
 import { buildDashboard } from './services/dashboard'
 import { applyGoalChange } from './services/goals'
 import { buildProfileView } from './services/profile'
@@ -278,12 +279,16 @@ export function startFast(input: StartFastInput = {}) {
       throw new Error('Nenhum protocolo disponível para iniciar o jejum')
     }
 
-    return startFastingSession(db, {
+    const session = startFastingSession(db, {
       profileId: profile.id,
       protocolId,
       startedAt: new Date(),
       targetHours: profile.dailyTargetHours,
     })
+
+    syncAchievements(db, profile.id)
+
+    return session
   })
 }
 
@@ -302,12 +307,16 @@ export function endFast(input: EndFastInput = {}) {
       return null
     }
 
-    return endFastingSession(db, active.id, {
+    const closed = endFastingSession(db, active.id, {
       endedAt: new Date(),
       breakFood: input.breakFood ?? null,
       moodNote: input.moodNote ?? null,
       notes: input.notes ?? null,
     })
+
+    syncAchievements(db, profile.id)
+
+    return closed
   })
 }
 
@@ -315,11 +324,15 @@ export function addWater(amountMl: number) {
   return withDb((db) => {
     const profile = requireProfile(db)
 
-    return logWater(db, {
+    const water = logWater(db, {
       amountMl,
       loggedAt: new Date(),
       profileId: profile.id,
     })
+
+    syncAchievements(db, profile.id)
+
+    return water
   })
 }
 
@@ -332,12 +345,16 @@ export function saveMood(input: SaveMoodInput) {
   return withDb((db) => {
     const profile = requireProfile(db)
 
-    return logMood(db, {
+    const mood = logMood(db, {
       level: input.level,
       note: input.note ?? null,
       loggedAt: new Date(),
       profileId: profile.id,
     })
+
+    syncAchievements(db, profile.id)
+
+    return mood
   })
 }
 
@@ -345,11 +362,15 @@ export function saveWeight(weightKg: number) {
   return withDb((db) => {
     const profile = requireProfile(db)
 
-    return logWeight(db, {
+    const weight = logWeight(db, {
       weightKg,
       loggedAt: new Date(),
       profileId: profile.id,
     })
+
+    syncAchievements(db, profile.id)
+
+    return weight
   })
 }
 

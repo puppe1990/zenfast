@@ -14,12 +14,16 @@ export function unlockAchievement(
   db: Db,
   slug: string,
   input: UnlockInput,
-): void {
-  db.prepare<[number, string, string]>(
-    `insert into achievements (profile_id, slug, unlocked_at)
+): boolean {
+  const result = db
+    .prepare<[number, string, string]>(
+      `insert into achievements (profile_id, slug, unlocked_at)
      values (?, ?, ?)
      on conflict (profile_id, slug) do nothing`,
-  ).run(input.profileId, slug, input.unlockedAt.toISOString())
+    )
+    .run(input.profileId, slug, input.unlockedAt.toISOString())
+
+  return result.changes > 0
 }
 
 export function listUnlockedAchievements(

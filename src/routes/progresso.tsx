@@ -8,7 +8,7 @@ import { Sheet } from '#/components/Sheet'
 import { useAction } from '#/components/useAction'
 import { WeeklyBars } from '#/components/WeeklyBars'
 import { WeightCard } from '#/components/WeightCard'
-import { formatDecimal } from '#/domain/format'
+import { formatDecimal, formatTime } from '#/domain/format'
 import { getProgress, postSaveWeight } from '#/server/actions'
 
 export const Route = createFileRoute('/progresso')({
@@ -50,8 +50,8 @@ function ProgressScreen() {
               <span className="material-symbols-outlined text-secondary text-[16px]">
                 sync
               </span>
-              <span className="font-label-badge text-label-badge text-secondary font-semibold">
-                Sincronizado
+              <span className="font-label-badge text-label-badge text-secondary font-semibold tabular-nums">
+                {`Atualizado às ${formatTime(view.now)}`}
               </span>
             </div>
           </div>

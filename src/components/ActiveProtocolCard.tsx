@@ -1,9 +1,11 @@
+import { formatTime } from '#/domain/format'
 import type { MetabolicStage } from '#/domain/metabolic'
 import type { Protocol } from '#/domain/types'
 
 export interface ActiveProtocolCardProps {
   protocol: Protocol
   goalHours: number
+  updatedAt: string
   adherencePercent: number
   adherenceMet: number
   adherenceTotal: number
@@ -17,6 +19,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 export function ActiveProtocolCard({
   protocol,
   goalHours,
+  updatedAt,
   adherencePercent,
   adherenceMet,
   adherenceTotal,
@@ -36,7 +39,7 @@ export function ActiveProtocolCard({
             Ativo Agora
           </span>
           <span className="font-label-caps text-label-caps text-on-surface-variant">
-            Sincronizado
+            {`atualizado às ${formatTime(updatedAt)}`}
           </span>
         </div>
         <button

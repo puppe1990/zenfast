@@ -1,8 +1,9 @@
-import type { AchievementEvaluation } from '#/domain/achievements'
+import { formatMonthDay } from '#/domain/format'
+import type { AchievementTimelineEntry } from '#/server/services/achievements'
 import { TONE_CHIP, TONE_SOFT_BG, TONE_TEXT } from './tone'
 
 export interface AchievementsGridProps {
-  achievements: AchievementEvaluation[]
+  achievements: AchievementTimelineEntry[]
   unlockedCount: number
 }
 
@@ -52,6 +53,11 @@ export function AchievementsGrid({
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                   {achievement.description}
                 </p>
+                {achievement.unlockedAt ? (
+                  <p className="font-label-caps text-label-caps text-on-surface-variant/70 mt-1.5">
+                    Conquistada em {formatMonthDay(achievement.unlockedAt)}
+                  </p>
+                ) : null}
               </div>
             </div>
           ) : (

@@ -1,5 +1,3 @@
-import { evaluateAchievements } from '#/domain/achievements'
-import type { AchievementEvaluation } from '#/domain/achievements'
 import { fastingDurationHours, sessionMeetsGoal } from '#/domain/fasting'
 import {
   formatDateLabel,
@@ -12,7 +10,6 @@ import {
   averageHours,
   computeEfficacy,
   computeStreak,
-  longestFastHours,
   monthlyHours,
   sessionEndDate,
   startOfDay,
@@ -32,6 +29,9 @@ import type { Db } from '#/db/client'
 
 import { requireProfile } from './tenant'
 import { listWaterLogs, listWeightLogs } from '#/db/repositories/logs'
+
+import type { AchievementTimelineEntry } from './achievements'
+import { achievementTimeline, computeAchievementStats } from './achievements'
 import { listSessions } from '#/db/repositories/sessions'
 
 export type DetailTone =
@@ -67,7 +67,7 @@ export interface ProgressView {
   waterGoalDays: number
   weight: WeightProgress | null
   targetWeightKg: number | null
-  achievements: AchievementEvaluation[]
+  achievements: AchievementTimelineEntry[]
   unlockedCount: number
   totalAchievements: number
   history: HistoryEntry[]
@@ -176,22 +176,10 @@ export function buildProgressView(
     waterByDay.set(key, (waterByDay.get(key) ?? 0) + log.amountMl)
   }
 
-  const waterGoalDays = [...waterByDay.values()].filter(
-    (total) => total >= profile.waterGoalMl,
-  ).length
-
   const efficacy = computeEfficacy(sessions, now)
   const streak = computeStreak(sessions, now)
-  const longest = longestFastHours(sessions, now)
-
-  const achievements = evaluateAchievements({
-    streak,
-    longestFastHours: longest,
-    totalFasts: sessions.filter((session) => session.status !== 'active')
-      .length,
-    goalEfficacyPercent: efficacy.percent,
-    waterGoalDays,
-  })
+  const stats = computeAchievementStats(db, profile.id, now)
+  const achievements = achievementTimeline(db, profile.id, now)
 
   const history = sessions
     .filter((session) => session.status !== 'active')
@@ -223,7 +211,7 @@ export function buildProgressView(
     averageDelta: Math.round((average - targetHours) * 10) / 10,
     insightVerdict: average >= targetHours ? 'Ótimo' : 'Atenção',
     targetHours,
-    waterGoalDays,
+    waterGoalDays: stats.waterGoalDays,
     weight: weightProgress(
       listWeightLogs(db, { profileId: profile.id }),
       profile.targetWeightKg,

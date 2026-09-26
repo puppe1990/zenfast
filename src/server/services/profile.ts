@@ -1,5 +1,4 @@
 import type { Db } from '#/db/client'
-import { listUnlockedAchievements } from '#/db/repositories/achievements'
 import { listWeightLogs } from '#/db/repositories/logs'
 import { findProtocolById } from '#/db/repositories/protocols'
 import { listSessions } from '#/db/repositories/sessions'
@@ -12,6 +11,8 @@ import type { Profile, Protocol } from '#/domain/types'
 import { weightProgress } from '#/domain/weight'
 import type { WeightProgress } from '#/domain/weight'
 import { ACHIEVEMENT_RULES } from '#/domain/achievements'
+
+import { achievementTimeline } from './achievements'
 
 import { requireProfile } from './tenant'
 
@@ -68,7 +69,9 @@ export function buildProfileView(
       profile.targetWeightKg,
     ),
     achievements: {
-      unlocked: listUnlockedAchievements(db, profile.id).length,
+      unlocked: achievementTimeline(db, profile.id, now).filter(
+        (achievement) => achievement.unlocked,
+      ).length,
       total: ACHIEVEMENT_RULES.length,
     },
   }

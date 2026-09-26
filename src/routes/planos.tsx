@@ -74,6 +74,7 @@ function ProtocolsScreen() {
         {view.activeProtocol ? (
           <ActiveProtocolCard
             goalHours={view.goalHours}
+            updatedAt={view.now}
             adherenceMet={view.adherenceMet}
             adherencePercent={view.adherencePercent}
             adherenceTotal={view.adherenceTotal}

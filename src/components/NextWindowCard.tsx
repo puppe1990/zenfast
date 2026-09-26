@@ -2,12 +2,14 @@ export interface NextWindowCardProps {
   startLabel: string
   endLabel: string
   durationHours: number
+  hint: string | null
 }
 
 export function NextWindowCard({
   startLabel,
   endLabel,
   durationHours,
+  hint,
 }: NextWindowCardProps) {
   return (
     <div className="flex items-center gap-space-md p-space-md rounded-2xl bg-surface-container-low shadow-sm">
@@ -28,9 +30,11 @@ export function NextWindowCard({
         <span className="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5 truncate tabular-nums">
           {startLabel} às {endLabel}
         </span>
-        <span className="font-body-sm text-body-sm text-on-surface-variant/80">
-          Primeira refeição rica em proteínas e fibras
-        </span>
+        {hint ? (
+          <span className="font-body-sm text-body-sm text-on-surface-variant/80 line-clamp-2">
+            {hint}
+          </span>
+        ) : null}
       </div>
     </div>
   )

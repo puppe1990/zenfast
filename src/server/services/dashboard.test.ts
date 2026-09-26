@@ -125,6 +125,13 @@ describe('buildDashboard', () => {
     expect(dashboard.cyclePercent).toBe(0)
   })
 
+  it('carries the tip of the day for the next window hint', () => {
+    const dashboard = buildDashboard(db, profile.id, now)
+
+    expect(dashboard.tipOfTheDay).not.toBeNull()
+    expect(dashboard.tipOfTheDay?.body.length).toBeGreaterThan(20)
+  })
+
   it('measures the goal from the tenant, not from the protocol template', () => {
     updateProfile(db, profile.id, { dailyTargetHours: 20 })
 
