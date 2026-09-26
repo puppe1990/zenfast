@@ -172,7 +172,24 @@ pnpm build
 pnpm start   # node .output/server/index.mjs
 ```
 
-Defina `ZENFAST_DB_FILE` para apontar o arquivo SQLite (padrão: `data/zenfast.db`).
+### cleat (self-hosted PaaS)
+
+Rodando em **https://zenfast.apps.gestaobem.com** (app `zenfast`, servidor `gestaobem-cx33`,
+unit `node-zenfast` atrás do Caddy). O runtime `node` da cleat detecta TanStack Start sozinho:
+roda `npm install` + `npm run build`, descarta `node_modules` (o `.output` é self-contained) e
+sobe o serviço com `node .output/server/index.mjs` — o `.cleat_deploy/deploy.json` fixa runtime,
+Node 22, 512 MB e o start command.
+
+| Env var               | Papel                                                                |
+| --------------------- | -------------------------------------------------------------------- |
+| `CLEAT_DATA_DIR`      | Injetada pela cleat: o SQLite fica em `/opt/zenfast/data/zenfast.db` |
+| `ZENFAST_DEMO_DATA=1` | Semeia 45 dias de demo (determinístico) quando o banco está vazio    |
+| `VITE_SITE_URL`       | Fallback de origin para as URLs absolutas do Open Graph              |
+| `TZ`                  | `America/Sao_Paulo`, para o SSR renderizar horários em pt-BR         |
+| `PORT`                | Porta do processo (a cleat injeta a porta do app, ex.: `4069`)       |
+
+`ZENFAST_DB_FILE` continua disponível para apontar o banco manualmente (local: `data/zenfast.db`).
+Push na `main` dispara deploy automático (GitHub webhook → build na VM → systemd + Caddy).
 
 ---
 
