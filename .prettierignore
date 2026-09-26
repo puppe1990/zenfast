@@ -1,0 +1,9 @@
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+dist
+.output
+.nitro
+.tanstack
+coverage
+src/routeTree.gen.ts
