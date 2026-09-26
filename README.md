@@ -58,6 +58,7 @@ conquistas e evolução corporal.
 | Validação   | Zod nas server functions                                           |
 | Testes      | Vitest (projetos `unit` e `ui`) + Testing Library                  |
 | Dados fake  | `@faker-js/faker` (seed determinístico com `--seed`)               |
+| PWA         | Web manifest + service worker próprio (app shell offline)          |
 | DX          | ESLint, Prettier, husky + lint-staged, GitHub Actions              |
 
 ---
@@ -95,6 +96,34 @@ suite de testes completa. O CI repete lint, formatação, typecheck, testes com 
 
 ---
 
+## PWA & compartilhamento
+
+O ZenFast é instalável e abre offline:
+
+- **`public/manifest.webmanifest`** — nome/short_name, `display: standalone`, orientação retrato,
+  cores obsidiana do design system, ícones 192/512, ícone **maskable** e atalhos para Início, Planos
+  e Progresso.
+- **`public/sw.js`** — service worker sem build step, com políticas por tipo de requisição:
+  - navegação → **network-first** (HTML fresco) com fallback para o cache e, sem cache,
+    `offline.html`;
+  - assets (`style`, `script`, `font`, `image`, `manifest`) → **stale-while-revalidate**;
+  - mutações e chamadas `/_serverFn` → **nunca** interceptadas (dados sempre vivos);
+  - `install` pré-cacheia o shell e `activate` descarta caches de versões anteriores.
+- **`public/offline.html`** — página offline autocontida (sem fontes externas), com botão de retry.
+- **`src/pwa/register.ts`** — registra o worker só em produção com suporte do browser;
+  `src/components/OfflineBanner.tsx` avisa quando a conexão cai.
+- **Open Graph** — `public/og.png` (1200×630, gerado a partir do design) é referenciado com URL
+  absoluta por `src/lib/site-meta.ts`, que também define título/descrição por rota, canonical e as
+  tags `twitter:card`. O origin é lido da request no servidor (`x-forwarded-host`/proto), com
+  fallback para `VITE_SITE_URL`.
+
+Para regerar a arte social: renderize um card 1200×630 no browser com os tokens do design e
+substitua `public/og.png`. Os testes `src/pwa/assets.test.ts` validam dimensões de todos os PNGs,
+os campos do manifest e a página offline; `src/pwa/service-worker.test.ts` executa o `sw.js` real
+com um harness de `caches`/`fetch` para checar cada estratégia.
+
+---
+
 ## Arquitetura
 
 ```
@@ -105,9 +134,16 @@ src/
 │   ├── runtime.ts   # fronteira server-only (better-sqlite3 + repositórios + services)
 │   ├── actions.ts   # server functions (createServerFn + Zod) consumidas pelas rotas
 │   └── services/    # montagem das views (dashboard, progresso, protocolos, perfil)
+├── pwa/             # registro do service worker e testes dos artefatos PWA
+├── lib/             # site-meta: títulos por rota, canonical, Open Graph e Twitter
 ├── components/      # design system em React + Tailwind (tokens do Stitch)
 ├── routes/          # /, /planos, /progresso, /perfil (file-based)
 └── test/            # setup do Testing Library
+
+public/
+├── manifest.webmanifest, sw.js, offline.html   # PWA
+├── og.png (1200x630), favicon.svg, apple-touch-icon.png
+└── icons/icon-192.png, icon-512.png, maskable-512.png
 ```
 
 - **Domínio puro**: todas as contas (fases metabólicas, streak, eficácia, barras semanais, progresso

@@ -1,5 +1,10 @@
 import '@tanstack/react-start/server-only'
 
+import {
+  getRequestHost,
+  getRequestProtocol,
+} from '@tanstack/react-start/server'
+
 import { ensureCatalog } from '#/db/bootstrap'
 import { getDb } from '#/db/client'
 import type { Db } from '#/db/client'
@@ -15,6 +20,7 @@ import {
 import { buildCustomProtocol } from '#/domain/protocol-catalog'
 import { computeStreak } from '#/domain/stats'
 import type { MoodLevel, ProtocolCategory } from '#/domain/types'
+import { buildOrigin } from '#/lib/site-meta'
 
 import { buildDashboard } from './services/dashboard'
 import { buildProfileView } from './services/profile'
@@ -30,6 +36,21 @@ function withDb<T>(run: (db: Db) => T): T {
 
 export function loadDashboard() {
   return withDb((db) => buildDashboard(db, new Date()))
+}
+
+export function loadOrigin(): string {
+  try {
+    const host = getRequestHost({ xForwardedHost: true })
+    const protocol = getRequestProtocol({ xForwardedProto: true })
+
+    return buildOrigin(
+      host,
+      protocol,
+      process.env.VITE_SITE_URL ?? 'http://localhost:3000',
+    )
+  } catch {
+    return process.env.VITE_SITE_URL ?? 'http://localhost:3000'
+  }
 }
 
 export function loadShell() {

@@ -20,6 +20,7 @@ export default [
       'prettier.config.js',
       'vitest.config.ts',
       'src/routeTree.gen.ts',
+      'public/**',
       'dist/**',
       '.output/**',
       '.nitro/**',

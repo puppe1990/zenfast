@@ -17,6 +17,8 @@ export default defineConfig({
             'src/domain/**/*.test.ts',
             'src/db/**/*.test.ts',
             'src/server/**/*.test.ts',
+            'src/pwa/**/*.test.ts',
+            'src/lib/**/*.test.ts',
           ],
         },
       },

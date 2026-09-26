@@ -18,6 +18,12 @@ export const getShell = createServerFn({ method: 'GET' }).handler(async () => {
   return loadShell()
 })
 
+export const getOrigin = createServerFn({ method: 'GET' }).handler(async () => {
+  const { loadOrigin } = await import('./runtime')
+
+  return loadOrigin()
+})
+
 export const getProgress = createServerFn({ method: 'GET' }).handler(
   async () => {
     const { loadProgress } = await import('./runtime')

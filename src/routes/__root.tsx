@@ -5,49 +5,74 @@ import {
   Scripts,
   createRootRoute,
 } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
 import { AppHeader } from '#/components/AppHeader'
 import { BottomNav } from '#/components/BottomNav'
-import { getShell } from '#/server/actions'
+import { OfflineBanner } from '#/components/OfflineBanner'
+import { canonicalLink, pageMetaFor, socialMeta } from '#/lib/site-meta'
+import { registerServiceWorker } from '#/pwa/register'
+import { getOrigin, getShell } from '#/server/actions'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      {
-        name: 'viewport',
-        content:
-          'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
-      },
-      { title: 'ZenFast — Rastreador de Jejum Intermitente' },
-      {
-        name: 'description',
-        content:
-          'ZenFast acompanha seu jejum intermitente: timer metabólico, hidratação, protocolos, conquistas e evolução corporal.',
-      },
-      { name: 'theme-color', content: '#0f131c' },
-    ],
-    links: [
-      { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      {
-        rel: 'preconnect',
-        href: 'https://fonts.gstatic.com',
-        crossOrigin: 'anonymous',
-      },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap',
-      },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap',
-      },
-      { rel: 'stylesheet', href: appCss },
-    ],
+  head: ({ loaderData, matches }) => {
+    const origin = loaderData?.origin ?? 'http://localhost:3000'
+    const pathname = matches.at(-1)?.pathname ?? '/'
+    const page = pageMetaFor(pathname)
+
+    return {
+      meta: [
+        { charSet: 'utf-8' },
+        {
+          name: 'viewport',
+          content:
+            'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
+        },
+        { name: 'theme-color', content: '#0f131c' },
+        { name: 'application-name', content: 'ZenFast' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-title', content: 'ZenFast' },
+        {
+          name: 'apple-mobile-web-app-status-bar-style',
+          content: 'black-translucent',
+        },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'format-detection', content: 'telephone=no' },
+        ...socialMeta({
+          title: page.title,
+          description: page.description,
+          path: pathname,
+          origin,
+        }),
+      ],
+      links: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+        { rel: 'manifest', href: '/manifest.webmanifest' },
+        canonicalLink(origin, pathname),
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        {
+          rel: 'preconnect',
+          href: 'https://fonts.gstatic.com',
+          crossOrigin: 'anonymous',
+        },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap',
+        },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap',
+        },
+        { rel: 'stylesheet', href: appCss },
+      ],
+    }
+  },
+  loader: async () => ({
+    shell: await getShell(),
+    origin: await getOrigin(),
   }),
-  loader: async () => ({ shell: await getShell() }),
   shellComponent: RootDocument,
   component: RootLayout,
   notFoundComponent: NotFound,
@@ -70,12 +95,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 function RootLayout() {
   const { shell } = Route.useLoaderData()
 
+  useEffect(() => {
+    void registerServiceWorker()
+  }, [])
+
   return (
     <>
       <AppHeader
         profileName={shell.profileName}
         streakDays={shell.streakDays}
       />
+      <OfflineBanner />
       <Outlet />
       <BottomNav />
     </>

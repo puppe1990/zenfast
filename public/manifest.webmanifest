@@ -1,0 +1,54 @@
+{
+  "id": "/",
+  "name": "ZenFast — Rastreador de Jejum Intermitente",
+  "short_name": "ZenFast",
+  "description": "Timer metabólico com fases biológicas, protocolos 16:8 → OMAD, hidratação, conquistas e evolução corporal.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0f131c",
+  "theme_color": "#0f131c",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Início",
+      "short_name": "Início",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Protocolos de Jejum",
+      "short_name": "Planos",
+      "url": "/planos"
+    },
+    {
+      "name": "Evolução Metabólica",
+      "short_name": "Progresso",
+      "url": "/progresso"
+    }
+  ]
+}
