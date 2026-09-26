@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { Db } from '#/db/client'
 import { logMood, logWater } from '#/db/repositories/logs'
+import { updateProfile } from '#/db/repositories/profile'
 import { findProtocolBySlug } from '#/db/repositories/protocols'
 import { startSession, endSession } from '#/db/repositories/sessions'
 import { createTestDb, createTestTenant } from '#/db/testing/helpers'
@@ -122,5 +123,32 @@ describe('buildDashboard', () => {
     expect(dashboard.progress).toBeNull()
     expect(dashboard.stage.id).toBe('digestao')
     expect(dashboard.cyclePercent).toBe(0)
+  })
+
+  it('measures the goal from the tenant, not from the protocol template', () => {
+    updateProfile(db, profile.id, { dailyTargetHours: 20 })
+
+    const dashboard = buildDashboard(db, profile.id, now)
+
+    expect(dashboard.goalHours).toBe(20)
+    expect(dashboard.timerTargetHours).toBe(20)
+    expect(dashboard.nextWindow.durationHours).toBe(4)
+    expect(dashboard.protocol.fastingHours).toBe(16)
+  })
+
+  it('keeps the running fast target as the timer reference', () => {
+    const protocol = findProtocolBySlug(db, '16-8-diario')!
+    startSession(db, {
+      profileId: profile.id,
+      protocolId: protocol.id,
+      startedAt: new Date(2026, 1, 24, 20, 0),
+      targetHours: 16,
+    })
+    updateProfile(db, profile.id, { dailyTargetHours: 20 })
+
+    const dashboard = buildDashboard(db, profile.id, now)
+
+    expect(dashboard.goalHours).toBe(20)
+    expect(dashboard.timerTargetHours).toBe(16)
   })
 })

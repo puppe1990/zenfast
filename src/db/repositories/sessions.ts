@@ -151,6 +151,26 @@ export function startSession(db: Db, input: StartSessionInput): FastingSession {
   return run()
 }
 
+export function updateActiveSessionTarget(
+  db: Db,
+  profileId: number,
+  targetHours: number,
+): FastingSession | null {
+  const active = findActiveSession(db, profileId)
+
+  if (!active) {
+    return null
+  }
+
+  const row = db
+    .prepare<[number, number], SessionRow>(
+      'update fasting_sessions set target_hours = ? where id = ? returning *',
+    )
+    .get(targetHours, active.id)
+
+  return row ? mapSession(row) : null
+}
+
 export function endSession(
   db: Db,
   sessionId: number,

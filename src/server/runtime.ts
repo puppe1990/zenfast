@@ -23,7 +23,7 @@ import {
   startSession,
 } from '#/db/repositories/accounts'
 import { logMood, logWater, logWeight } from '#/db/repositories/logs'
-import { activateProtocol, updateProfile } from '#/db/repositories/profile'
+import { activateProtocol } from '#/db/repositories/profile'
 import { insertProtocol, listProtocols } from '#/db/repositories/protocols'
 import {
   endSession as endFastingSession,
@@ -44,6 +44,7 @@ import {
 } from '#/lib/session-cookie'
 
 import { buildDashboard } from './services/dashboard'
+import { applyGoalChange } from './services/goals'
 import { buildProfileView } from './services/profile'
 import { buildProgressView } from './services/progress'
 import { buildProtocolsView } from './services/protocols'
@@ -372,7 +373,7 @@ export function saveGoals(input: SaveGoalsInput) {
   return withDb((db) => {
     const profile = requireProfile(db)
 
-    return updateProfile(db, profile.id, input)
+    return applyGoalChange(db, profile.id, input)
   })
 }
 

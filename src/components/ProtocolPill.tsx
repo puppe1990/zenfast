@@ -4,14 +4,14 @@ import { formatDayPhrase, formatTime } from '#/domain/format'
 
 export interface ProtocolPillProps {
   protocolName: string
-  targetHours: number
+  goalHours: number
   activeSession: { startedAt: string } | null
   now: Date
 }
 
 export function ProtocolPill({
   protocolName,
-  targetHours,
+  goalHours,
   activeSession,
   now,
 }: ProtocolPillProps) {
@@ -26,7 +26,7 @@ export function ProtocolPill({
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-label-badge text-label-badge text-primary uppercase font-bold tracking-wider">
-              {`Protocolo ${targetHours}:${24 - targetHours}`}
+              {`Protocolo ${goalHours}:${24 - goalHours}`}
             </span>
             <span
               className={`inline-block w-1.5 h-1.5 rounded-full ${

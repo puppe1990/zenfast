@@ -3,6 +3,7 @@ import type { Protocol } from '#/domain/types'
 
 export interface ActiveProtocolCardProps {
   protocol: Protocol
+  goalHours: number
   adherencePercent: number
   adherenceMet: number
   adherenceTotal: number
@@ -15,6 +16,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
 export function ActiveProtocolCard({
   protocol,
+  goalHours,
   adherencePercent,
   adherenceMet,
   adherenceTotal,
@@ -75,7 +77,7 @@ export function ActiveProtocolCard({
           </svg>
           <div className="absolute flex flex-col items-center justify-center">
             <span className="font-timer-display-mobile text-sm font-bold text-on-surface leading-none tabular-nums">
-              {protocol.fastingHours}:{protocol.eatingHours}
+              {goalHours}:{24 - goalHours}
             </span>
             <span className="font-label-caps text-[9px] text-on-surface-variant uppercase mt-0.5">
               {protocol.method}
@@ -88,8 +90,10 @@ export function ActiveProtocolCard({
             {protocol.name}
           </h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-            {protocol.fastingHours}h jejum • {protocol.eatingHours}h alimentação
-            aberta
+            {goalHours}h jejum • {24 - goalHours}h alimentação aberta
+            {goalHours === protocol.fastingHours
+              ? null
+              : ` • ${protocol.name} sugere ${protocol.fastingHours}h`}
           </p>
           <div className="mt-space-sm flex items-center gap-space-md flex-wrap">
             <div className="flex items-center gap-1.5">

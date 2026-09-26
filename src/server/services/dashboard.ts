@@ -43,6 +43,8 @@ export interface DashboardView {
   protocol: Protocol
   activeSession: FastingSession | null
   progress: FastingProgress | null
+  goalHours: number
+  timerTargetHours: number
   stage: MetabolicStage
   stageIndex: number
   cyclePercent: number
@@ -113,6 +115,8 @@ export function buildDashboard(
       }
     : null
 
+  const goalHours = profile.dailyTargetHours
+  const eatingHours = Math.max(0, 24 - goalHours)
   const windowStart = progress?.targetTimeLabel ?? protocol.suggestedWindowStart
 
   return {
@@ -121,6 +125,8 @@ export function buildDashboard(
     protocol,
     activeSession,
     progress,
+    goalHours,
+    timerTargetHours: progress?.targetHours ?? goalHours,
     stage,
     stageIndex: stageIndexForElapsedHours(elapsedHours),
     cyclePercent: progress
@@ -133,8 +139,8 @@ export function buildDashboard(
     mood,
     nextWindow: {
       startLabel: windowStart,
-      endLabel: shiftWindow(windowStart, protocol.eatingHours),
-      durationHours: protocol.eatingHours,
+      endLabel: shiftWindow(windowStart, eatingHours),
+      durationHours: eatingHours,
     },
     streakDays: computeStreak(listSessions(db, { profileId: profile.id }), now)
       .current,

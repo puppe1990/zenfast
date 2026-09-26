@@ -68,15 +68,15 @@ function TimerScreen() {
       <div className="flex flex-col w-full px-margin pb-space-xl gap-space-lg select-none">
         <ProtocolPill
           activeSession={dashboard.activeSession}
+          goalHours={dashboard.goalHours}
           now={now}
           protocolName={dashboard.protocol.name}
-          targetHours={dashboard.protocol.fastingHours}
         />
 
         <RadialFastingTimer
           initialProgress={dashboard.progress}
           startedAt={dashboard.activeSession?.startedAt ?? null}
-          targetHours={dashboard.protocol.fastingHours}
+          targetHours={dashboard.timerTargetHours}
         />
 
         <PhaseCard stage={dashboard.stage} />

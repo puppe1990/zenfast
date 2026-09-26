@@ -31,6 +31,7 @@ export interface ProtocolsView {
   protocols: Protocol[]
   categories: ProtocolCategoryOption[]
   tip: Tip | null
+  goalHours: number
   adherencePercent: number
   adherenceMet: number
   adherenceTotal: number
@@ -79,6 +80,7 @@ export function buildProtocolsView(
     protocols: listProtocols(db, category),
     categories: PROTOCOL_CATEGORIES,
     tip: listTips(db)[0] ?? null,
+    goalHours: profile.dailyTargetHours,
     adherenceMet: met,
     adherenceTotal: recentSessions.length,
     adherencePercent:
