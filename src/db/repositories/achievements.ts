@@ -1,5 +1,4 @@
 import type { Db } from '../client'
-import { getProfile } from './profile'
 
 interface AchievementRow {
   slug: string
@@ -8,7 +7,7 @@ interface AchievementRow {
 
 export interface UnlockInput {
   unlockedAt: Date
-  profileId?: number
+  profileId: number
 }
 
 export function unlockAchievement(
@@ -16,30 +15,21 @@ export function unlockAchievement(
   slug: string,
   input: UnlockInput,
 ): void {
-  const profileId = input.profileId ?? getProfile(db).id
-
   db.prepare<[number, string, string]>(
     `insert into achievements (profile_id, slug, unlocked_at)
      values (?, ?, ?)
      on conflict (profile_id, slug) do nothing`,
-  ).run(profileId, slug, input.unlockedAt.toISOString())
+  ).run(input.profileId, slug, input.unlockedAt.toISOString())
 }
 
 export function listUnlockedAchievements(
   db: Db,
-  profileId?: number,
+  profileId: number,
 ): Array<{ slug: string; unlockedAt: string }> {
-  const rows = profileId
-    ? db
-        .prepare<[number], AchievementRow>(
-          'select slug, unlocked_at from achievements where profile_id = ? order by unlocked_at asc',
-        )
-        .all(profileId)
-    : db
-        .prepare<[], AchievementRow>(
-          'select slug, unlocked_at from achievements order by unlocked_at asc',
-        )
-        .all()
-
-  return rows.map((row) => ({ slug: row.slug, unlockedAt: row.unlocked_at }))
+  return db
+    .prepare<[number], AchievementRow>(
+      'select slug, unlocked_at from achievements where profile_id = ? order by unlocked_at asc',
+    )
+    .all(profileId)
+    .map((row) => ({ slug: row.slug, unlockedAt: row.unlocked_at }))
 }

@@ -4,6 +4,7 @@ import {
   Outlet,
   Scripts,
   createRootRoute,
+  redirect,
 } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
@@ -12,11 +13,28 @@ import { BottomNav } from '#/components/BottomNav'
 import { OfflineBanner } from '#/components/OfflineBanner'
 import { canonicalLink, pageMetaFor, socialMeta } from '#/lib/site-meta'
 import { registerServiceWorker } from '#/pwa/register'
-import { getOrigin, getShell } from '#/server/actions'
+import { getOrigin, getSession } from '#/server/actions'
 import appCss from '../styles.css?url'
 
+export interface RootLoaderData {
+  session: {
+    authenticated: boolean
+    profileName: string | null
+    email: string | null
+    isGuest: boolean
+    streakDays: number
+  }
+  origin: string
+}
+
 export const Route = createRootRoute({
-  head: ({ loaderData, matches }) => {
+  head: ({
+    loaderData,
+    matches,
+  }: {
+    loaderData?: RootLoaderData
+    matches: Array<{ pathname: string }>
+  }) => {
     const origin = loaderData?.origin ?? 'http://localhost:3000'
     const pathname = matches.at(-1)?.pathname ?? '/'
     const page = pageMetaFor(pathname)
@@ -69,10 +87,15 @@ export const Route = createRootRoute({
       ],
     }
   },
-  loader: async () => ({
-    shell: await getShell(),
-    origin: await getOrigin(),
-  }),
+  loader: async ({ location }) => {
+    const [session, origin] = await Promise.all([getSession(), getOrigin()])
+
+    if (!session.authenticated && location.pathname !== '/entrar') {
+      throw redirect({ to: '/entrar' })
+    }
+
+    return { session, origin }
+  },
   shellComponent: RootDocument,
   component: RootLayout,
   notFoundComponent: NotFound,
@@ -93,17 +116,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 }
 
 function RootLayout() {
-  const { shell } = Route.useLoaderData()
+  const { session } = Route.useLoaderData()
 
   useEffect(() => {
     void registerServiceWorker()
   }, [])
 
+  if (!session.authenticated) {
+    return (
+      <main className="flex-1 flex flex-col relative w-full pt-16 pb-8 bg-surface">
+        <Outlet />
+      </main>
+    )
+  }
+
   return (
     <>
       <AppHeader
-        profileName={shell.profileName}
-        streakDays={shell.streakDays}
+        profileName={session.profileName ?? 'Visitante'}
+        streakDays={session.streakDays}
       />
       <OfflineBanner />
       <Outlet />

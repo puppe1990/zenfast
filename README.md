@@ -44,22 +44,30 @@ conquistas e evolução corporal.
 
 - Identidade, protocolo ativo, resumo (jejuns, horas, sequência) e edição de metas
   (nome, meta de água, peso inicial/meta de peso).
+- Bloco de conta: e-mail (ou sessão de visitante), política de isolamento e sair.
+
+**Contas e multi-tenant**
+
+- `/entrar` com login, criação de conta (e-mail + senha) e **explorar como visitante**.
+- Cada conta é um **tenant isolado**: jejuns, hidratação, humor, peso e conquistas são
+  privados; o catálogo de protocolos é compartilhado e o plano ativo é por tenant.
 
 ---
 
 ## Stack
 
-| Camada      | Escolha                                                            |
-| ----------- | ------------------------------------------------------------------ |
-| Framework   | [TanStack Start](https://tanstack.com/start) (React 19, Vite, SSR) |
-| Rotas dados | TanStack Router (file-based) + `createServerFn` (RPC tipado)       |
-| Banco       | SQLite (`better-sqlite3`) com schema/migrações idempotentes        |
-| Estilo      | Tailwind CSS v4 com os design tokens do Stitch (`@theme`)          |
-| Validação   | Zod nas server functions                                           |
-| Testes      | Vitest (projetos `unit` e `ui`) + Testing Library                  |
-| Dados fake  | `@faker-js/faker` (seed determinístico com `--seed`)               |
-| PWA         | Web manifest + service worker próprio (app shell offline)          |
-| DX          | ESLint, Prettier, husky + lint-staged, GitHub Actions              |
+| Camada       | Escolha                                                            |
+| ------------ | ------------------------------------------------------------------ |
+| Framework    | [TanStack Start](https://tanstack.com/start) (React 19, Vite, SSR) |
+| Rotas dados  | TanStack Router (file-based) + `createServerFn` (RPC tipado)       |
+| Banco        | SQLite (`better-sqlite3`) com schema/migrações idempotentes        |
+| Estilo       | Tailwind CSS v4 com os design tokens do Stitch (`@theme`)          |
+| Validação    | Zod nas server functions                                           |
+| Testes       | Vitest (projetos `unit` e `ui`) + Testing Library                  |
+| Dados fake   | `@faker-js/faker` (seed determinístico com `--seed`)               |
+| PWA          | Web manifest + service worker próprio (app shell offline)          |
+| Multi-tenant | Perfis isolados por sessão de cookie assinado (scrypt para senhas) |
+| DX           | ESLint, Prettier, husky + lint-staged, GitHub Actions              |
 
 ---
 
@@ -93,6 +101,28 @@ primeira execução. O seed é apenas para dados de demonstração.
 
 O `pre-commit` (husky) roda `lint-staged` (ESLint `--fix` + Prettier nos arquivos alterados) e a
 suite de testes completa. O CI repete lint, formatação, typecheck, testes com cobertura e build.
+
+---
+
+## Multi-tenant
+
+Cada visitante é um **tenant** (`profiles`): o dono da linha é o id que todas as tabelas de dados
+referenciam (`profile_id`). O servidor resolve o tenant pela sessão, nunca pelo cliente.
+
+- **Sessão**: `/entrar` cria uma sessão (`sessions.token` aleatório de 32 bytes, 90 dias) gravada em
+  cookie `HttpOnly` + `SameSite=Lax` (+ `Secure` em HTTPS). `signOut` apaga a linha e o cookie.
+- **Senhas**: `scrypt` com sal por usuário (`src/lib/password.ts`); o hash nunca sai do repositório
+  (o `Profile` público não carrega `password_hash`).
+- **Isolamento por construção**: nenhum repositório aceita mais "o perfil padrão" — `profileId` é
+  parâmetro obrigatório em fasts, água, humor, peso e conquistas, então um vazamento exige passar o
+  id errado de propósito. `src/server/services/tenant-isolation.test.ts` prova o isolamento ponta a
+  ponta (KPIs, histórico, peso, conquistas e plano ativo entre dois tenants).
+- **Visitante**: cria um tenant `is_guest` com 45 dias de demonstração (quando `ZENFAST_DEMO_DATA=1`);
+  contas reais começam vazias — e o seed nunca roda duas vezes nem sobrescreve dados.
+- **Proteção de rota**: o loader raiz redireciona para `/entrar` sem sessão válida, e qualquer server
+  function de dados responde `Sessão expirada` sem cookie válido.
+- **Bancos antigos**: `migrate()` adiciona `email`, `password_hash`, `is_guest` e a tabela `sessions`
+  de forma idempotente, preservando os dados que já existiam.
 
 ---
 

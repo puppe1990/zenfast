@@ -5,18 +5,20 @@ import { logWater, logWeight, logMood } from '#/db/repositories/logs'
 import { findProtocolBySlug } from '#/db/repositories/protocols'
 import { updateProfile } from '#/db/repositories/profile'
 import { endSession, startSession } from '#/db/repositories/sessions'
-import { createTestDb } from '#/db/testing/helpers'
+import { createTestDb, createTestTenant } from '#/db/testing/helpers'
 
 import { buildProgressView } from './progress'
 
 function completedFast(
   db: Db,
+  profileId: number,
   protocolId: number,
   start: Date,
   hours: number,
   extra: { breakFood?: string; moodNote?: string; notes?: string } = {},
 ) {
   const session = startSession(db, {
+    profileId,
     protocolId,
     startedAt: start,
     targetHours: 16,
@@ -32,23 +34,26 @@ describe('buildProgressView', () => {
   const now = new Date(2026, 1, 25, 14, 0)
   let db: Db
   let protocolId: number
+  let profile: ReturnType<typeof createTestTenant>
 
   beforeEach(() => {
     db = createTestDb()
+    profile = createTestTenant(db)
     protocolId = findProtocolBySlug(db, '16-8-diario')!.id
   })
 
   it('aggregates the KPI cards', () => {
-    completedFast(db, protocolId, new Date(2026, 1, 23, 20, 0), 16)
-    completedFast(db, protocolId, new Date(2026, 1, 24, 20, 0), 16)
-    completedFast(db, protocolId, new Date(2026, 1, 22, 20, 0), 15)
+    completedFast(db, profile.id, protocolId, new Date(2026, 1, 23, 20, 0), 16)
+    completedFast(db, profile.id, protocolId, new Date(2026, 1, 24, 20, 0), 16)
+    completedFast(db, profile.id, protocolId, new Date(2026, 1, 22, 20, 0), 15)
     startSession(db, {
+      profileId: profile.id,
       protocolId,
       startedAt: new Date(2026, 1, 24, 20, 0),
       targetHours: 16,
     })
 
-    const view = buildProgressView(db, now)
+    const view = buildProgressView(db, profile.id, now)
 
     expect(view.streak).toEqual({ current: 2, record: 2 })
     expect(view.efficacy).toEqual({ met: 2, total: 3, percent: 67 })
@@ -57,10 +62,22 @@ describe('buildProgressView', () => {
   })
 
   it('describes the weekly consistency insight', () => {
-    completedFast(db, protocolId, new Date(2026, 1, 23, 20, 0), 16.5)
-    completedFast(db, protocolId, new Date(2026, 1, 24, 20, 0), 15.5)
+    completedFast(
+      db,
+      profile.id,
+      protocolId,
+      new Date(2026, 1, 23, 20, 0),
+      16.5,
+    )
+    completedFast(
+      db,
+      profile.id,
+      protocolId,
+      new Date(2026, 1, 24, 20, 0),
+      15.5,
+    )
 
-    const view = buildProgressView(db, now)
+    const view = buildProgressView(db, profile.id, now)
 
     expect(view.averageHours).toBeCloseTo(4.571, 3)
     expect(view.averageDelta).toBeCloseTo(-11.4, 1)
@@ -68,11 +85,19 @@ describe('buildProgressView', () => {
   })
 
   it('tracks weight progress towards the goal', () => {
-    updateProfile(db, { startWeightKg: 76.5, targetWeightKg: 71.5 })
-    logWeight(db, { weightKg: 76.5, loggedAt: new Date(2026, 1, 1, 8, 0) })
-    logWeight(db, { weightKg: 73.7, loggedAt: new Date(2026, 1, 24, 8, 0) })
+    updateProfile(db, profile.id, { startWeightKg: 76.5, targetWeightKg: 71.5 })
+    logWeight(db, {
+      weightKg: 76.5,
+      loggedAt: new Date(2026, 1, 1, 8, 0),
+      profileId: profile.id,
+    })
+    logWeight(db, {
+      weightKg: 73.7,
+      loggedAt: new Date(2026, 1, 24, 8, 0),
+      profileId: profile.id,
+    })
 
-    const view = buildProgressView(db, now)
+    const view = buildProgressView(db, profile.id, now)
 
     expect(view.targetWeightKg).toBe(71.5)
     expect(view.weight?.currentWeightKg).toBe(73.7)
@@ -80,9 +105,9 @@ describe('buildProgressView', () => {
   })
 
   it('evaluates achievements against the history', () => {
-    completedFast(db, protocolId, new Date(2026, 1, 23, 20, 0), 19)
+    completedFast(db, profile.id, protocolId, new Date(2026, 1, 23, 20, 0), 19)
 
-    const view = buildProgressView(db, now)
+    const view = buildProgressView(db, profile.id, now)
 
     expect(view.totalAchievements).toBe(12)
     expect(view.unlockedCount).toBeGreaterThanOrEqual(3)
@@ -92,6 +117,7 @@ describe('buildProgressView', () => {
   it('builds the expandable history entries', () => {
     const session = completedFast(
       db,
+      profile.id,
       protocolId,
       new Date(2026, 1, 23, 20, 0),
       16,
@@ -100,9 +126,13 @@ describe('buildProgressView', () => {
         moodNote: 'Alta energia & clareza mental',
       },
     )
-    logWater(db, { amountMl: 2200, loggedAt: new Date(2026, 1, 24, 10, 0) })
+    logWater(db, {
+      amountMl: 2200,
+      loggedAt: new Date(2026, 1, 24, 10, 0),
+      profileId: profile.id,
+    })
 
-    const view = buildProgressView(db, now)
+    const view = buildProgressView(db, profile.id, now)
     const entry = view.history.find((item) => item.id === session.id)
 
     expect(entry?.dateLabel).toBe('Ontem')
@@ -132,11 +162,18 @@ describe('buildProgressView', () => {
   })
 
   it('labels a partial fast and its balance note', () => {
-    completedFast(db, protocolId, new Date(2026, 1, 22, 20, 0), 15.5, {
-      notes: 'Encerramento antecipado social',
-    })
+    completedFast(
+      db,
+      profile.id,
+      protocolId,
+      new Date(2026, 1, 22, 20, 0),
+      15.5,
+      {
+        notes: 'Encerramento antecipado social',
+      },
+    )
 
-    const view = buildProgressView(db, now)
+    const view = buildProgressView(db, profile.id, now)
     const entry = view.history[0]
 
     expect(entry.statusLabel).toBe('Parcial')
@@ -158,11 +195,16 @@ describe('buildProgressView', () => {
       logWater(db, {
         amountMl: 2600,
         loggedAt: new Date(2026, 1, day, 12, 0),
+        profileId: profile.id,
       })
     }
-    logMood(db, { level: 'alta', loggedAt: new Date(2026, 1, 24, 12, 0) })
+    logMood(db, {
+      level: 'alta',
+      loggedAt: new Date(2026, 1, 24, 12, 0),
+      profileId: profile.id,
+    })
 
-    const view = buildProgressView(db, now)
+    const view = buildProgressView(db, profile.id, now)
 
     expect(view.waterGoalDays).toBe(5)
   })

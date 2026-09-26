@@ -50,10 +50,68 @@ describe('createDatabase', () => {
         'profiles',
         'protocols',
         'expert_tips',
+        'sessions',
         'water_logs',
         'weight_logs',
       ]),
     )
+
+    db.close()
+  })
+
+  it('upgrades a database created before multi-tenant accounts', () => {
+    const db = new Database(':memory:')
+    db.exec(
+      `create table profiles (
+         id integer primary key autoincrement,
+         name text not null,
+         avatar_seed text,
+         active_protocol_id integer,
+         daily_target_hours integer not null default 16,
+         water_goal_ml integer not null default 2500,
+         start_weight_kg real,
+         target_weight_kg real,
+         created_at text not null default (datetime('now'))
+       )`,
+    )
+    db.prepare("insert into profiles (name) values ('Atleta antigo')").run()
+
+    migrate(db)
+    migrate(db)
+
+    const columns = (
+      db.prepare('pragma table_info(profiles)').all() as Array<{ name: string }>
+    ).map((row) => row.name)
+
+    expect(columns).toEqual(
+      expect.arrayContaining(['email', 'password_hash', 'is_guest']),
+    )
+
+    const migrated = db
+      .prepare<[], { name: string; is_guest: number }>(
+        'select name, is_guest from profiles limit 1',
+      )
+      .get()
+
+    expect(migrated).toEqual({ name: 'Atleta antigo', is_guest: 0 })
+
+    db.close()
+  })
+
+  it('keeps one account per email', () => {
+    const db = createDatabase(':memory:')
+
+    db.prepare(
+      "insert into profiles (name, email) values ('A', 'a@zenfast.dev')",
+    ).run()
+
+    expect(() =>
+      db
+        .prepare(
+          "insert into profiles (name, email) values ('B', 'a@zenfast.dev')",
+        )
+        .run(),
+    ).toThrow(/unique/i)
 
     db.close()
   })

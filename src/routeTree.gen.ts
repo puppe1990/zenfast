@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as ProgressoRouteImport } from './routes/progresso'
@@ -17,6 +18,11 @@ import { Route as ProgressoRouteImport } from './routes/progresso'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -37,12 +43,14 @@ const ProgressoRoute = ProgressoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/entrar': typeof EntrarRoute
   '/perfil': typeof PerfilRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/entrar': typeof EntrarRoute
   '/perfil': typeof PerfilRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/entrar': typeof EntrarRoute
   '/perfil': typeof PerfilRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/perfil' | '/planos' | '/progresso'
+  fullPaths: '/' | '/entrar' | '/perfil' | '/planos' | '/progresso'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/perfil' | '/planos' | '/progresso'
-  id: '__root__' | '/' | '/perfil' | '/planos' | '/progresso'
+  to: '/' | '/entrar' | '/perfil' | '/planos' | '/progresso'
+  id: '__root__' | '/' | '/entrar' | '/perfil' | '/planos' | '/progresso'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EntrarRoute: typeof EntrarRoute
   PerfilRoute: typeof PerfilRoute
   PlanosRoute: typeof PlanosRoute
   ProgressoRoute: typeof ProgressoRoute
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EntrarRoute: EntrarRoute,
   PerfilRoute: PerfilRoute,
   PlanosRoute: PlanosRoute,
   ProgressoRoute: ProgressoRoute,

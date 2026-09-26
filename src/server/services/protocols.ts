@@ -1,11 +1,12 @@
 import { computeFastingProgress, sessionMeetsGoal } from '#/domain/fasting'
 import { stageForElapsedHours } from '#/domain/metabolic'
 import type { MetabolicStage } from '#/domain/metabolic'
-import type { Protocol, ProtocolCategory, Tip } from '#/domain/types'
+import type { Profile, Protocol, ProtocolCategory, Tip } from '#/domain/types'
 
 import type { Db } from '#/db/client'
+
+import { requireProfile } from './tenant'
 import { listTips } from '#/db/repositories/tips'
-import { getProfile } from '#/db/repositories/profile'
 import { findProtocolById, listProtocols } from '#/db/repositories/protocols'
 import { findActiveSession, listSessions } from '#/db/repositories/sessions'
 import type { FastingProgress } from '#/domain/fasting'
@@ -25,7 +26,7 @@ export const PROTOCOL_CATEGORIES: ProtocolCategoryOption[] = [
 
 export interface ProtocolsView {
   now: string
-  profile: ReturnType<typeof getProfile>
+  profile: Profile
   activeProtocol: Protocol | null
   protocols: Protocol[]
   categories: ProtocolCategoryOption[]
@@ -41,10 +42,11 @@ const ADHERENCE_WINDOW_DAYS = 30
 
 export function buildProtocolsView(
   db: Db,
+  profileId: number,
   now: Date,
   category?: ProtocolCategory,
 ): ProtocolsView {
-  const profile = getProfile(db)
+  const profile = requireProfile(db, profileId)
   const activeProtocol = profile.activeProtocolId
     ? findProtocolById(db, profile.activeProtocolId)
     : null

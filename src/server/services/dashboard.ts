@@ -19,8 +19,9 @@ import type {
 } from '#/domain/types'
 
 import type { Db } from '#/db/client'
+
+import { requireProfile } from './tenant'
 import { latestMood, listWaterLogs, waterTotal } from '#/db/repositories/logs'
-import { getProfile } from '#/db/repositories/profile'
 import {
   findProtocolById,
   findProtocolBySlug,
@@ -56,8 +57,12 @@ export interface DashboardView {
   todayHours: number
 }
 
-export function buildDashboard(db: Db, now: Date): DashboardView {
-  const profile = getProfile(db)
+export function buildDashboard(
+  db: Db,
+  profileId: number,
+  now: Date,
+): DashboardView {
+  const profile = requireProfile(db, profileId)
   const protocol =
     (profile.activeProtocolId
       ? findProtocolById(db, profile.activeProtocolId)

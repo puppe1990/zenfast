@@ -1,7 +1,8 @@
 import { faker } from '@faker-js/faker'
 
 import { createDatabase } from './client'
-import { ensureCatalog } from './bootstrap'
+import { DEFAULT_TENANT_NAME, createTenant, ensureCatalog } from './bootstrap'
+import { findFirstGuestProfile } from './repositories/profile'
 import type { SeedRandom } from './random'
 import { seedDatabase } from './seeding'
 
@@ -40,7 +41,12 @@ function main() {
   const db = createDatabase()
   ensureCatalog(db)
 
+  const tenant =
+    findFirstGuestProfile(db) ??
+    createTenant(db, { name: DEFAULT_TENANT_NAME, isGuest: true })
+
   const summary = seedDatabase(db, {
+    profileId: tenant.id,
     days,
     reset,
     random: createFakerRandom(seed),

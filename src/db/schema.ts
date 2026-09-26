@@ -21,6 +21,9 @@ create table if not exists protocols (
 create table if not exists profiles (
   id integer primary key autoincrement,
   name text not null,
+  email text,
+  password_hash text,
+  is_guest integer not null default 0,
   avatar_seed text,
   active_protocol_id integer references protocols(id) on delete set null,
   daily_target_hours integer not null default 16,
@@ -29,6 +32,15 @@ create table if not exists profiles (
   target_weight_kg real,
   created_at text not null default (datetime('now'))
 );
+
+create table if not exists sessions (
+  token text primary key,
+  profile_id integer not null references profiles(id) on delete cascade,
+  created_at text not null,
+  expires_at text not null
+);
+
+create index if not exists idx_sessions_profile on sessions (profile_id);
 
 create table if not exists fasting_sessions (
   id integer primary key autoincrement,

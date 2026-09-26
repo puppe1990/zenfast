@@ -67,6 +67,8 @@ export interface WeightLog {
 export interface Profile {
   id: number
   name: string
+  email: string | null
+  isGuest: boolean
   avatarSeed: string | null
   activeProtocolId: number | null
   dailyTargetHours: number

@@ -24,8 +24,42 @@ export function resolveDatabaseFile(
 
 export const DEFAULT_DB_FILE = resolveDatabaseFile()
 
+function columnExists(db: Db, table: string, column: string): boolean {
+  const columns = db.prepare(`pragma table_info(${table})`).all() as Array<{
+    name: string
+  }>
+
+  return columns.some((row) => row.name === column)
+}
+
+function addColumnIfMissing(
+  db: Db,
+  table: string,
+  column: string,
+  definition: string,
+): void {
+  if (!columnExists(db, table, column)) {
+    db.exec(`alter table ${table} add column ${column} ${definition}`)
+  }
+}
+
 export function migrate(db: Db): void {
   db.exec(SCHEMA_SQL)
+
+  const profileColumns: Array<[string, string]> = [
+    ['email', 'text'],
+    ['password_hash', 'text'],
+    ['is_guest', 'integer not null default 0'],
+  ]
+
+  for (const [column, definition] of profileColumns) {
+    addColumnIfMissing(db, 'profiles', column, definition)
+  }
+
+  db.exec(
+    `create unique index if not exists idx_profiles_email
+     on profiles (email) where email is not null`,
+  )
 }
 
 export function createDatabase(filename: string = DEFAULT_DB_FILE): Db {

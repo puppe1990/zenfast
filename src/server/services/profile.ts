@@ -1,7 +1,6 @@
 import type { Db } from '#/db/client'
 import { listUnlockedAchievements } from '#/db/repositories/achievements'
 import { listWeightLogs } from '#/db/repositories/logs'
-import { getProfile } from '#/db/repositories/profile'
 import { findProtocolById } from '#/db/repositories/protocols'
 import { listSessions } from '#/db/repositories/sessions'
 import {
@@ -13,6 +12,8 @@ import type { Profile, Protocol } from '#/domain/types'
 import { weightProgress } from '#/domain/weight'
 import type { WeightProgress } from '#/domain/weight'
 import { ACHIEVEMENT_RULES } from '#/domain/achievements'
+
+import { requireProfile } from './tenant'
 
 export interface ProfileView {
   profile: Profile
@@ -32,8 +33,12 @@ export interface ProfileView {
   }
 }
 
-export function buildProfileView(db: Db, now: Date): ProfileView {
-  const profile = getProfile(db)
+export function buildProfileView(
+  db: Db,
+  profileId: number,
+  now: Date,
+): ProfileView {
+  const profile = requireProfile(db, profileId)
   const sessions = listSessions(db, { profileId: profile.id, limit: 500 })
   const finished = sessions.filter((session) => session.status !== 'active')
 

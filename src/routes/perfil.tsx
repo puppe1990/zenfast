@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Avatar } from '#/components/Avatar'
 import { useAction } from '#/components/useAction'
 import { formatDecimal } from '#/domain/format'
-import { getProfile, postSaveGoals } from '#/server/actions'
+import { getProfile, postSaveGoals, postSignOut } from '#/server/actions'
 
 export const Route = createFileRoute('/perfil')({
   loader: () => getProfile(),
@@ -27,6 +27,10 @@ function ProfileScreen() {
       ? ''
       : String(view.profile.startWeightKg),
   )
+
+  const signOut = useAction(async () => {
+    await postSignOut()
+  })
 
   const saveGoals = useAction(async () => {
     await postSaveGoals({
@@ -89,6 +93,51 @@ function ProfileScreen() {
               </p>
             </div>
           </div>
+        </section>
+
+        <section className="rounded-lg bg-surface-container-low p-5 shadow-lg space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-tertiary text-[20px]">
+                shield_person
+              </span>
+              <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+                Conta
+              </h2>
+            </div>
+            <span
+              className={`px-2.5 py-0.5 rounded-full font-label-badge text-label-badge font-bold ${
+                view.profile.isGuest
+                  ? 'bg-surface-variant text-on-surface-variant'
+                  : 'bg-secondary/15 text-secondary'
+              }`}
+            >
+              {view.profile.isGuest ? 'Visitante' : 'Conta'}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="font-body-md text-body-md text-on-surface font-bold">
+              {view.profile.email ?? 'Sessão de visitante'}
+            </span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">
+              {view.profile.isGuest
+                ? 'Seus dados ficam isolados neste navegador. Saia e crie uma conta para acessar de qualquer aparelho.'
+                : 'Seus jejuns, água, humor e peso ficam isolados nesta conta.'}
+            </span>
+          </div>
+
+          <button
+            className="w-full py-3.5 rounded-full bg-surface-container-highest/60 text-on-surface font-label-badge text-label-badge font-bold flex items-center justify-center gap-2 active:scale-98 transition-transform disabled:opacity-60"
+            disabled={signOut.pending}
+            onClick={() => void signOut.run()}
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              logout
+            </span>
+            {signOut.pending ? 'Saindo...' : 'Sair da conta'}
+          </button>
         </section>
 
         <section className="rounded-lg bg-surface-container-low p-5 shadow-lg space-y-4">

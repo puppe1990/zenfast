@@ -29,8 +29,9 @@ import { weightProgress } from '#/domain/weight'
 import type { WeightProgress } from '#/domain/weight'
 
 import type { Db } from '#/db/client'
+
+import { requireProfile } from './tenant'
 import { listWaterLogs, listWeightLogs } from '#/db/repositories/logs'
-import { getProfile } from '#/db/repositories/profile'
 import { listSessions } from '#/db/repositories/sessions'
 
 export type DetailTone =
@@ -157,8 +158,12 @@ function historyDetails(
   return details
 }
 
-export function buildProgressView(db: Db, now: Date): ProgressView {
-  const profile = getProfile(db)
+export function buildProgressView(
+  db: Db,
+  profileId: number,
+  now: Date,
+): ProgressView {
+  const profile = requireProfile(db, profileId)
   const sessions = listSessions(db, { profileId: profile.id, limit: 200 })
   const targetHours = profile.dailyTargetHours
   const bars = weeklyBars(sessions, now, targetHours)

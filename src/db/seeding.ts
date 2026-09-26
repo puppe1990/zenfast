@@ -20,6 +20,7 @@ import {
 } from '#/domain/stats'
 
 export interface SeedOptions {
+  profileId: number
   now?: Date
   days?: number
   seed?: number
@@ -79,7 +80,7 @@ export function resetDatabase(db: Db, profileId: number): void {
   )
 }
 
-export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
+export function seedDatabase(db: Db, options: SeedOptions): SeedSummary {
   const now = options.now ?? new Date()
   const days = options.days ?? 45
   const random = options.random ?? createDeterministicRandom(options.seed ?? 42)
@@ -94,13 +95,12 @@ export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
     throw new Error('Protocol catalog is empty')
   }
 
-  const profile = updateProfile(db, {
-    name: 'Atleta ZenFast',
+  const profile = updateProfile(db, options.profileId, {
     waterGoalMl: 2500,
     startWeightKg: 76.5,
     targetWeightKg: 71.5,
   })
-  activateProtocol(db, protocol.id)
+  activateProtocol(db, profile.id, protocol.id)
 
   if (options.reset) {
     resetDatabase(db, profile.id)
@@ -117,6 +117,7 @@ export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
 
     if (isToday) {
       startSession(db, {
+        profileId: profile.id,
         protocolId: protocol.id,
         startedAt: new Date(now.getTime() - (14 * 3600 + 25 * 60 + 41) * 1000),
         targetHours: profile.dailyTargetHours,
@@ -132,6 +133,7 @@ export function seedDatabase(db: Db, options: SeedOptions = {}): SeedSummary {
       const targetMet = duration >= profile.dailyTargetHours
 
       const session = startSession(db, {
+        profileId: profile.id,
         protocolId: protocol.id,
         startedAt,
         targetHours: profile.dailyTargetHours,

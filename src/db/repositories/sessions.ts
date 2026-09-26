@@ -1,7 +1,6 @@
 import type { FastingSession, SessionStatus } from '#/domain/types'
 
 import type { Db } from '../client'
-import { getProfile } from './profile'
 
 interface SessionRow {
   id: number
@@ -20,7 +19,7 @@ export interface StartSessionInput {
   protocolId: number
   startedAt: Date
   targetHours: number
-  profileId?: number
+  profileId: number
 }
 
 export interface EndSessionInput {
@@ -31,7 +30,7 @@ export interface EndSessionInput {
 }
 
 export interface ListSessionsOptions {
-  profileId?: number
+  profileId: number
   limit?: number
 }
 
@@ -72,67 +71,57 @@ export function findSessionById(db: Db, id: number): FastingSession | null {
 
 export function findActiveSession(
   db: Db,
-  profileId?: number,
+  profileId: number,
 ): FastingSession | null {
-  const row = profileId
-    ? db
-        .prepare<[number], SessionRow>(
-          `select * from fasting_sessions
-           where status = 'active' and profile_id = ?
-           order by started_at desc limit 1`,
-        )
-        .get(profileId)
-    : db
-        .prepare<[], SessionRow>(
-          `select * from fasting_sessions
-           where status = 'active'
-           order by started_at desc limit 1`,
-        )
-        .get()
+  const row = db
+    .prepare<[number], SessionRow>(
+      `select * from fasting_sessions
+       where status = 'active' and profile_id = ?
+       order by started_at desc limit 1`,
+    )
+    .get(profileId)
 
   return row ? mapSession(row) : null
 }
 
 export function listSessions(
   db: Db,
-  options: ListSessionsOptions = {},
+  options: ListSessionsOptions,
 ): FastingSession[] {
   const limit = options.limit ?? 100
-  const rows = options.profileId
-    ? db
-        .prepare<[number, number], SessionRow>(
-          `select * from fasting_sessions
-           where profile_id = ?
-           order by started_at desc limit ?`,
-        )
-        .all(options.profileId, limit)
-    : db
-        .prepare<[number], SessionRow>(
-          'select * from fasting_sessions order by started_at desc limit ?',
-        )
-        .all(limit)
+  const rows = db
+    .prepare<[number, number], SessionRow>(
+      `select * from fasting_sessions
+       where profile_id = ?
+       order by started_at desc limit ?`,
+    )
+    .all(options.profileId, limit)
 
   return rows.map(mapSession)
 }
 
-export function countSessions(db: Db, profileId?: number): number {
-  const row = profileId
-    ? db
-        .prepare<[number], { total: number }>(
-          'select count(*) as total from fasting_sessions where profile_id = ?',
-        )
-        .get(profileId)
-    : db
-        .prepare<[], { total: number }>(
-          'select count(*) as total from fasting_sessions',
-        )
-        .get()
+export function countSessions(db: Db, profileId: number): number {
+  const row = db
+    .prepare<[number], { total: number }>(
+      'select count(*) as total from fasting_sessions where profile_id = ?',
+    )
+    .get(profileId)
+
+  return row?.total ?? 0
+}
+
+export function countAllSessions(db: Db): number {
+  const row = db
+    .prepare<[], { total: number }>(
+      'select count(*) as total from fasting_sessions',
+    )
+    .get()
 
   return row?.total ?? 0
 }
 
 export function startSession(db: Db, input: StartSessionInput): FastingSession {
-  const profileId = input.profileId ?? getProfile(db).id
+  const profileId = input.profileId
   const startedAt = input.startedAt.toISOString()
 
   const run = db.transaction((): FastingSession => {

@@ -1,7 +1,6 @@
 import type { MoodLevel, MoodLog, WaterLog, WeightLog } from '#/domain/types'
 
 import type { Db } from '../client'
-import { getProfile } from './profile'
 
 interface WaterRow {
   id: number
@@ -23,7 +22,7 @@ interface WeightRow {
 }
 
 export interface LogRangeOptions {
-  profileId?: number
+  profileId: number
   since?: Date
   until?: Date
   limit?: number
@@ -32,31 +31,29 @@ export interface LogRangeOptions {
 export interface LogWaterInput {
   amountMl: number
   loggedAt: Date
-  profileId?: number
+  profileId: number
 }
 
 export interface LogMoodInput {
   level: MoodLevel
   note?: string | null
   loggedAt: Date
-  profileId?: number
+  profileId: number
 }
 
 export interface LogWeightInput {
   weightKg: number
   loggedAt: Date
-  profileId?: number
+  profileId: number
 }
 
 export function logWater(db: Db, input: LogWaterInput): WaterLog {
-  const profileId = input.profileId ?? getProfile(db).id
-
   const row = db
     .prepare<[number, string, number], WaterRow>(
       `insert into water_logs (profile_id, logged_at, amount_ml)
        values (?, ?, ?) returning *`,
     )
-    .get(profileId, input.loggedAt.toISOString(), input.amountMl)
+    .get(input.profileId, input.loggedAt.toISOString(), input.amountMl)
 
   const water = row as WaterRow
 
@@ -67,17 +64,10 @@ export function logWater(db: Db, input: LogWaterInput): WaterLog {
   }
 }
 
-export function listWaterLogs(
-  db: Db,
-  options: LogRangeOptions = {},
-): WaterLog[] {
-  const conditions: string[] = []
-  const params: Array<number | string> = []
+export function listWaterLogs(db: Db, options: LogRangeOptions): WaterLog[] {
+  const conditions = ['profile_id = ?']
+  const params: Array<number | string> = [options.profileId]
 
-  if (options.profileId !== undefined) {
-    conditions.push('profile_id = ?')
-    params.push(options.profileId)
-  }
   if (options.since) {
     conditions.push('logged_at >= ?')
     params.push(options.since.toISOString())
@@ -87,12 +77,12 @@ export function listWaterLogs(
     params.push(options.until.toISOString())
   }
 
-  const where = conditions.length > 0 ? `where ${conditions.join(' and ')}` : ''
   const limit = options.limit ?? 200
 
   const rows = db
     .prepare<Array<number | string>, WaterRow>(
-      `select * from water_logs ${where} order by logged_at desc limit ${limit}`,
+      `select * from water_logs where ${conditions.join(' and ')}
+       order by logged_at desc limit ${limit}`,
     )
     .all(...params)
 
@@ -103,7 +93,7 @@ export function listWaterLogs(
   }))
 }
 
-export function waterTotal(db: Db, options: LogRangeOptions = {}): number {
+export function waterTotal(db: Db, options: LogRangeOptions): number {
   return listWaterLogs(db, options).reduce(
     (total, log) => total + log.amountMl,
     0,
@@ -111,15 +101,13 @@ export function waterTotal(db: Db, options: LogRangeOptions = {}): number {
 }
 
 export function logMood(db: Db, input: LogMoodInput): MoodLog {
-  const profileId = input.profileId ?? getProfile(db).id
-
   const row = db
     .prepare<[number, string, string, string | null], MoodRow>(
       `insert into mood_logs (profile_id, logged_at, level, note)
        values (?, ?, ?, ?) returning *`,
     )
     .get(
-      profileId,
+      input.profileId,
       input.loggedAt.toISOString(),
       input.level,
       input.note ?? null,
@@ -135,18 +123,12 @@ export function logMood(db: Db, input: LogMoodInput): MoodLog {
   }
 }
 
-export function latestMood(db: Db, profileId?: number): MoodLog | null {
-  const row = profileId
-    ? db
-        .prepare<[number], MoodRow>(
-          'select * from mood_logs where profile_id = ? order by logged_at desc limit 1',
-        )
-        .get(profileId)
-    : db
-        .prepare<[], MoodRow>(
-          'select * from mood_logs order by logged_at desc limit 1',
-        )
-        .get()
+export function latestMood(db: Db, profileId: number): MoodLog | null {
+  const row = db
+    .prepare<[number], MoodRow>(
+      'select * from mood_logs where profile_id = ? order by logged_at desc limit 1',
+    )
+    .get(profileId)
 
   return row
     ? {
@@ -159,14 +141,12 @@ export function latestMood(db: Db, profileId?: number): MoodLog | null {
 }
 
 export function logWeight(db: Db, input: LogWeightInput): WeightLog {
-  const profileId = input.profileId ?? getProfile(db).id
-
   const row = db
     .prepare<[number, string, number], WeightRow>(
       `insert into weight_logs (profile_id, logged_at, weight_kg)
        values (?, ?, ?) returning *`,
     )
-    .get(profileId, input.loggedAt.toISOString(), input.weightKg)
+    .get(input.profileId, input.loggedAt.toISOString(), input.weightKg)
 
   const weight = row as WeightRow
 
@@ -177,23 +157,14 @@ export function logWeight(db: Db, input: LogWeightInput): WeightLog {
   }
 }
 
-export function listWeightLogs(
-  db: Db,
-  options: LogRangeOptions = {},
-): WeightLog[] {
+export function listWeightLogs(db: Db, options: LogRangeOptions): WeightLog[] {
   const limit = options.limit ?? 365
-  const rows = options.profileId
-    ? db
-        .prepare<[number, number], WeightRow>(
-          `select * from weight_logs where profile_id = ?
-           order by logged_at asc limit ?`,
-        )
-        .all(options.profileId, limit)
-    : db
-        .prepare<[number], WeightRow>(
-          'select * from weight_logs order by logged_at asc limit ?',
-        )
-        .all(limit)
+  const rows = db
+    .prepare<[number, number], WeightRow>(
+      `select * from weight_logs where profile_id = ?
+       order by logged_at asc limit ?`,
+    )
+    .all(options.profileId, limit)
 
   return rows.map((row) => ({
     id: row.id,

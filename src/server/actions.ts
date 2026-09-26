@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 const protocolIdSchema = z.object({ protocolId: z.number().int().positive() })
 const moodSchema = z.enum(['baixa', 'media', 'alta', 'otima'])
+const emailSchema = z.string().trim().toLowerCase().email().max(160)
 
 export const getDashboard = createServerFn({ method: 'GET' }).handler(
   async () => {
@@ -12,17 +13,63 @@ export const getDashboard = createServerFn({ method: 'GET' }).handler(
   },
 )
 
-export const getShell = createServerFn({ method: 'GET' }).handler(async () => {
-  const { loadShell } = await import('./runtime')
+export const getSession = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const { loadSession } = await import('./runtime')
 
-  return loadShell()
-})
+    return loadSession()
+  },
+)
 
 export const getOrigin = createServerFn({ method: 'GET' }).handler(async () => {
   const { loadOrigin } = await import('./runtime')
 
   return loadOrigin()
 })
+
+export const postSignUp = createServerFn({ method: 'POST' })
+  .validator((data: { name: string; email: string; password: string }) =>
+    z
+      .object({
+        name: z.string().trim().min(2).max(60),
+        email: emailSchema,
+        password: z.string().min(8).max(100),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { signUp } = await import('./runtime')
+
+    return signUp(data)
+  })
+
+export const postSignIn = createServerFn({ method: 'POST' })
+  .validator((data: { email: string; password: string }) =>
+    z
+      .object({ email: emailSchema, password: z.string().min(1).max(100) })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { signIn } = await import('./runtime')
+
+    return signIn(data)
+  })
+
+export const postSignOut = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    const { signOut } = await import('./runtime')
+
+    return signOut()
+  },
+)
+
+export const postGuestSession = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    const { startGuestSession } = await import('./runtime')
+
+    return startGuestSession()
+  },
+)
 
 export const getProgress = createServerFn({ method: 'GET' }).handler(
   async () => {
