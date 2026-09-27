@@ -16,6 +16,29 @@ export interface FastingProgress {
 }
 
 export const MINUTE_TOLERANCE_HOURS = 1 / 60
+export const MAX_BACKDATE_HOURS = 72
+
+export function parseFastingStart(value: string, now: Date): Date {
+  const start = new Date(value)
+
+  if (Number.isNaN(start.getTime())) {
+    throw new Error('Horário de início inválido.')
+  }
+
+  if (start.getTime() > now.getTime()) {
+    throw new Error('O início do jejum não pode estar no futuro.')
+  }
+
+  if (now.getTime() - start.getTime() > MAX_BACKDATE_HOURS * MS_PER_HOUR) {
+    throw new Error(
+      `O início do jejum não pode ser anterior a ${
+        MAX_BACKDATE_HOURS / 24
+      } dias.`,
+    )
+  }
+
+  return start
+}
 
 export function roundUpDurationLabel(hours: number): string {
   const totalMinutes = Math.ceil(Math.max(0, hours) * 60)
