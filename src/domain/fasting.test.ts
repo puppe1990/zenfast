@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  MAX_BACKDATE_HOURS,
   computeFastingProgress,
   fastingDurationHours,
+  parseFastingStart,
   roundUpDurationLabel,
   sessionMeetsGoal,
 } from './fasting'
@@ -60,6 +62,47 @@ describe('roundUpDurationLabel', () => {
 
   it('keeps exact durations untouched', () => {
     expect(roundUpDurationLabel(8)).toBe('8h 00m')
+  })
+})
+
+describe('parseFastingStart', () => {
+  const now = new Date(2026, 1, 25, 10, 0, 0)
+
+  it('accepts a past start within the allowed window', () => {
+    const start = parseFastingStart(
+      new Date(2026, 1, 25, 6, 0, 0).toISOString(),
+      now,
+    )
+
+    expect(start.toISOString()).toBe(
+      new Date(2026, 1, 25, 6, 0, 0).toISOString(),
+    )
+  })
+
+  it('accepts the exact current time', () => {
+    expect(parseFastingStart(now.toISOString(), now).getTime()).toBe(
+      now.getTime(),
+    )
+  })
+
+  it('rejects an invalid date', () => {
+    expect(() => parseFastingStart('not-a-date', now)).toThrow(/inválido/i)
+  })
+
+  it('rejects a start in the future', () => {
+    expect(() =>
+      parseFastingStart(new Date(2026, 1, 25, 10, 1, 0).toISOString(), now),
+    ).toThrow(/futuro/i)
+  })
+
+  it('rejects a start older than the maximum backdate window', () => {
+    const tooOld = new Date(
+      now.getTime() - (MAX_BACKDATE_HOURS * 3600_000 + 60_000),
+    )
+
+    expect(() => parseFastingStart(tooOld.toISOString(), now)).toThrow(
+      /anterior/i,
+    )
   })
 })
 

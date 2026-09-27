@@ -31,6 +31,7 @@ import {
   listSessions,
   startSession as startFastingSession,
 } from '#/db/repositories/sessions'
+import { parseFastingStart } from '#/domain/fasting'
 import { buildCustomProtocol } from '#/domain/protocol-catalog'
 import { computeStreak } from '#/domain/stats'
 import type { MoodLevel, Profile, ProtocolCategory } from '#/domain/types'
@@ -264,6 +265,7 @@ export function loadProfile() {
 
 export interface StartFastInput {
   protocolId?: number
+  startedAt?: string
 }
 
 export function startFast(input: StartFastInput = {}) {
@@ -279,10 +281,15 @@ export function startFast(input: StartFastInput = {}) {
       throw new Error('Nenhum protocolo disponível para iniciar o jejum')
     }
 
+    const now = new Date()
+    const startedAt = input.startedAt
+      ? parseFastingStart(input.startedAt, now)
+      : now
+
     const session = startFastingSession(db, {
       profileId: profile.id,
       protocolId,
-      startedAt: new Date(),
+      startedAt,
       targetHours: profile.dailyTargetHours,
     })
 

@@ -10,6 +10,7 @@ import { ProtocolPill } from '#/components/ProtocolPill'
 import { RadialFastingTimer } from '#/components/RadialFastingTimer'
 import { Sheet } from '#/components/Sheet'
 import { useAction } from '#/components/useAction'
+import { MAX_BACKDATE_HOURS } from '#/domain/fasting'
 import { MOOD_LEVELS } from '#/domain/mood'
 import type { MoodLevel } from '#/domain/types'
 import {
@@ -31,12 +32,31 @@ const BREAK_FOOD_SUGGESTIONS = [
   'Iogurte natural com frutas vermelhas',
 ]
 
+const BACKDATE_OPTIONS = [
+  { label: 'Agora', hoursAgo: 0 },
+  { label: '1h atrás', hoursAgo: 1 },
+  { label: '2h atrás', hoursAgo: 2 },
+  { label: '4h atrás', hoursAgo: 4 },
+]
+
+function toLocalInputValue(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 function TimerScreen() {
   const dashboard = Route.useLoaderData()
   const now = new Date(dashboard.now)
   const [endSheetOpen, setEndSheetOpen] = useState(false)
+  const [startSheetOpen, setStartSheetOpen] = useState(false)
   const [moodSheetOpen, setMoodSheetOpen] = useState(false)
   const [breakFood, setBreakFood] = useState(BREAK_FOOD_SUGGESTIONS[0])
+  const [startedAtInput, setStartedAtInput] = useState(() =>
+    toLocalInputValue(new Date()),
+  )
   const [moodNoteInput, setMoodNoteInput] = useState('')
   const [moodLevel, setMoodLevel] = useState<MoodLevel>(
     dashboard.mood?.level ?? 'otima',
@@ -46,8 +66,9 @@ function TimerScreen() {
   const water = useAction(async () => {
     await postAddWater({ data: { amountMl: 250 } })
   })
-  const startFast = useAction(async () => {
-    await postStartFast({ data: {} })
+  const startFast = useAction(async (startedAt?: string) => {
+    await postStartFast({ data: startedAt ? { startedAt } : {} })
+    setStartSheetOpen(false)
   })
   const endFast = useAction(async () => {
     await postEndFast({
@@ -67,6 +88,21 @@ function TimerScreen() {
   })
 
   const hasActiveFast = dashboard.activeSession !== null
+
+  const openStartSheet = () => {
+    setStartedAtInput(toLocalInputValue(new Date()))
+    setStartSheetOpen(true)
+  }
+
+  const confirmBackdatedStart = () => {
+    const parsed = new Date(startedAtInput)
+
+    if (Number.isNaN(parsed.getTime())) {
+      return
+    }
+
+    void startFast.run(parsed.toISOString())
+  }
 
   return (
     <main className="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-surface">
@@ -127,17 +163,31 @@ function TimerScreen() {
               Encerrar Jejum Mais Cedo
             </button>
           ) : (
-            <button
-              className="w-full h-14 rounded-full bg-gradient-to-r from-primary-container via-primary to-primary-fixed-dim text-on-primary-container font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(245,158,11,0.35)] active:scale-[0.98] transition-all disabled:opacity-60"
-              disabled={startFast.pending}
-              onClick={() => void startFast.run()}
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[22px]">
-                play_circle
-              </span>
-              Iniciar Jejum Agora
-            </button>
+            <>
+              <button
+                className="w-full h-14 rounded-full bg-gradient-to-r from-primary-container via-primary to-primary-fixed-dim text-on-primary-container font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(245,158,11,0.35)] active:scale-[0.98] transition-all disabled:opacity-60"
+                disabled={startFast.pending}
+                onClick={() => void startFast.run()}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[22px]">
+                  play_circle
+                </span>
+                Iniciar Jejum Agora
+              </button>
+
+              <button
+                className="w-full h-11 rounded-full text-on-surface-variant hover:text-primary font-label-badge text-label-badge font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+                disabled={startFast.pending}
+                onClick={openStartSheet}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  history
+                </span>
+                Comecei em outro horário
+              </button>
+            </>
           )}
 
           <button
@@ -215,6 +265,68 @@ function TimerScreen() {
         >
           {endFast.pending ? 'Registrando...' : 'Confirmar e Encerrar'}
         </button>
+      </Sheet>
+
+      <Sheet
+        description="Ajuste o horário real em que você começou a jejuar."
+        onClose={() => setStartSheetOpen(false)}
+        open={startSheetOpen}
+        title="Iniciar Jejum"
+      >
+        <div className="flex flex-wrap gap-2">
+          {BACKDATE_OPTIONS.map((option) => (
+            <button
+              className="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-badge text-label-badge hover:text-primary transition-colors"
+              key={option.label}
+              onClick={() =>
+                setStartedAtInput(
+                  toLocalInputValue(
+                    new Date(Date.now() - option.hoursAgo * 3_600_000),
+                  ),
+                )
+              }
+              type="button"
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <div className="space-y-3">
+          <label
+            className="font-label-caps text-label-caps text-on-surface-variant uppercase"
+            htmlFor="start-at"
+          >
+            Início do jejum
+          </label>
+          <input
+            className="w-full bg-surface-container-lowest rounded-2xl py-4 px-5 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+            id="start-at"
+            max={toLocalInputValue(new Date())}
+            min={toLocalInputValue(
+              new Date(Date.now() - MAX_BACKDATE_HOURS * 3_600_000),
+            )}
+            onChange={(event) => setStartedAtInput(event.target.value)}
+            type="datetime-local"
+            value={startedAtInput}
+          />
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            Você pode registrar um início de até {MAX_BACKDATE_HOURS / 24} dias
+            atrás.
+          </p>
+        </div>
+        <button
+          className="w-full py-4 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary-container font-headline-sm text-body-lg font-extrabold shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-98 transition-transform disabled:opacity-60"
+          disabled={startFast.pending || startedAtInput === ''}
+          onClick={confirmBackdatedStart}
+          type="button"
+        >
+          {startFast.pending ? 'Iniciando...' : 'Iniciar Jejum'}
+        </button>
+        {startFast.error ? (
+          <p className="font-body-sm text-body-sm text-error text-center">
+            {startFast.error.message}
+          </p>
+        ) : null}
       </Sheet>
 
       <Sheet

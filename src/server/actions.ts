@@ -96,9 +96,12 @@ export const getProfile = createServerFn({ method: 'GET' }).handler(
 )
 
 export const postStartFast = createServerFn({ method: 'POST' })
-  .validator((data: { protocolId?: number } | undefined) =>
+  .validator((data: { protocolId?: number; startedAt?: string } | undefined) =>
     z
-      .object({ protocolId: z.number().int().positive().optional() })
+      .object({
+        protocolId: z.number().int().positive().optional(),
+        startedAt: z.string().max(40).optional(),
+      })
       .parse(data ?? {}),
   )
   .handler(async ({ data }) => {
