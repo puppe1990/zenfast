@@ -44,34 +44,63 @@ function activeFast(startedAt: Date) {
   })
 }
 
+function fastStartingOn(
+  day: Date,
+  status: 'completed' | 'partial' = 'completed',
+  hours = TARGET,
+) {
+  const startedAt = new Date(
+    day.getFullYear(),
+    day.getMonth(),
+    day.getDate(),
+    20,
+    0,
+    0,
+  )
+
+  return makeSession({
+    startedAt: startedAt.toISOString(),
+    endedAt: new Date(
+      startedAt.getTime() + hours * 60 * 60 * 1000,
+    ).toISOString(),
+    targetHours: TARGET,
+    status,
+  })
+}
+
 describe('computeStreak', () => {
   const now = new Date(2026, 1, 25, 14, 0)
 
-  it('counts consecutive goal-met days ending yesterday', () => {
+  it('counts consecutive days a fast was started', () => {
     const sessions = [
-      fastEndingOn(new Date(2026, 1, 24), 16),
-      fastEndingOn(new Date(2026, 1, 23), 16.5),
-      fastEndingOn(new Date(2026, 1, 22), 16),
+      fastStartingOn(new Date(2026, 1, 24)),
+      fastStartingOn(new Date(2026, 1, 23)),
+      fastStartingOn(new Date(2026, 1, 22)),
     ]
 
     expect(computeStreak(sessions, now)).toEqual({ current: 3, record: 3 })
   })
 
-  it('keeps the streak alive while today is still fasting', () => {
+  it('counts any started fast, even partial or still active', () => {
     const sessions = [
-      activeFast(new Date(2026, 1, 24, 20, 0)),
-      fastEndingOn(new Date(2026, 1, 24), 16),
-      fastEndingOn(new Date(2026, 1, 23), 16),
+      activeFast(new Date(2026, 1, 25, 8, 0)),
+      fastStartingOn(new Date(2026, 1, 24), 'partial', 14),
+      fastStartingOn(new Date(2026, 1, 23)),
     ]
 
-    expect(computeStreak(sessions, now).current).toBe(3)
+    expect(computeStreak(sessions, now)).toEqual({ current: 3, record: 3 })
   })
 
-  it('breaks the streak on a missed day', () => {
+  it('attributes a fast to the day it started', () => {
+    const sessions = [fastStartingOn(new Date(2026, 1, 24), 'completed', 16)]
+
+    expect(computeStreak(sessions, now)).toEqual({ current: 1, record: 1 })
+  })
+
+  it('breaks the streak on a skipped day', () => {
     const sessions = [
-      fastEndingOn(new Date(2026, 1, 24), 16),
-      fastEndingOn(new Date(2026, 1, 23), 15.5),
-      fastEndingOn(new Date(2026, 1, 22), 16),
+      fastStartingOn(new Date(2026, 1, 24)),
+      fastStartingOn(new Date(2026, 1, 22)),
     ]
 
     expect(computeStreak(sessions, now).current).toBe(1)
@@ -79,11 +108,11 @@ describe('computeStreak', () => {
 
   it('remembers the record streak even after a break', () => {
     const sessions = [
-      fastEndingOn(new Date(2026, 1, 24), 16),
-      fastEndingOn(new Date(2026, 1, 20), 16),
-      fastEndingOn(new Date(2026, 1, 19), 16),
-      fastEndingOn(new Date(2026, 1, 18), 16),
-      fastEndingOn(new Date(2026, 1, 17), 16),
+      fastStartingOn(new Date(2026, 1, 24)),
+      fastStartingOn(new Date(2026, 1, 20)),
+      fastStartingOn(new Date(2026, 1, 19)),
+      fastStartingOn(new Date(2026, 1, 18)),
+      fastStartingOn(new Date(2026, 1, 17)),
     ]
 
     expect(computeStreak(sessions, now)).toEqual({ current: 1, record: 4 })

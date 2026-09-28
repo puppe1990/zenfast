@@ -55,7 +55,7 @@ describe('buildProgressView', () => {
 
     const view = buildProgressView(db, profile.id, now)
 
-    expect(view.streak).toEqual({ current: 2, record: 2 })
+    expect(view.streak).toEqual({ current: 3, record: 3 })
     expect(view.efficacy).toEqual({ met: 2, total: 3, percent: 67 })
     expect(view.targetHours).toBe(16)
     expect(view.weekBars).toHaveLength(7)

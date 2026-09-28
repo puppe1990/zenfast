@@ -85,6 +85,21 @@ export function formatTime(date: Date | string): string {
   return `${h}:${m}`
 }
 
+export function formatDateTimeInput(date: Date | string): string {
+  const value = typeof date === 'string' ? new Date(date) : date
+  const pad = (part: number) => String(part).padStart(2, '0')
+
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(
+    value.getDate(),
+  )}T${pad(value.getHours())}:${pad(value.getMinutes())}`
+}
+
+export function parseDateTimeInput(value: string): Date | null {
+  const date = value === '' ? new Date(Number.NaN) : new Date(value)
+
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 export function formatMonthDay(date: Date | string): string {
   const value = typeof date === 'string' ? new Date(date) : date
   const day = String(value.getDate()).padStart(2, '0')

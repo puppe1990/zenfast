@@ -6,6 +6,9 @@ import type { HistoryEntry } from '#/server/services/progress'
 export interface HistoryListProps {
   entries: HistoryEntry[]
   initialVisible?: number
+  onCreate?: () => void
+  onEdit?: (entry: HistoryEntry) => void
+  onDelete?: (entry: HistoryEntry) => void
 }
 
 function entryIcon(entry: HistoryEntry) {
@@ -23,7 +26,13 @@ function entryIcon(entry: HistoryEntry) {
   return { icon: 'done', classes: 'bg-primary/20 text-primary' }
 }
 
-export function HistoryList({ entries, initialVisible = 3 }: HistoryListProps) {
+export function HistoryList({
+  entries,
+  initialVisible = 3,
+  onCreate,
+  onEdit,
+  onDelete,
+}: HistoryListProps) {
   const [expanded, setExpanded] = useState<number | null>(
     entries[0]?.id ?? null,
   )
@@ -33,7 +42,7 @@ export function HistoryList({ entries, initialVisible = 3 }: HistoryListProps) {
 
   return (
     <div className="space-y-3 pb-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-secondary text-[20px]">
             history
@@ -42,16 +51,37 @@ export function HistoryList({ entries, initialVisible = 3 }: HistoryListProps) {
             Histórico Recente
           </h2>
         </div>
-        {entries.length > initialVisible ? (
-          <button
-            className="font-label-badge text-label-badge text-primary font-bold hover:underline"
-            onClick={() => setShowAll((value) => !value)}
-            type="button"
-          >
-            {showAll ? 'Ver Menos' : 'Ver Todos'}
-          </button>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {onCreate ? (
+            <button
+              className="flex items-center gap-1 font-label-badge text-label-badge text-primary font-bold hover:underline"
+              onClick={onCreate}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                add_circle
+              </span>
+              Adicionar
+            </button>
+          ) : null}
+          {entries.length > initialVisible ? (
+            <button
+              className="font-label-badge text-label-badge text-primary font-bold hover:underline"
+              onClick={() => setShowAll((value) => !value)}
+              type="button"
+            >
+              {showAll ? 'Ver Menos' : 'Ver Todos'}
+            </button>
+          ) : null}
+        </div>
       </div>
+
+      {entries.length === 0 ? (
+        <p className="rounded-lg bg-surface-container-low p-4 font-body-sm text-body-sm text-on-surface-variant">
+          Nenhum jejum no histórico ainda. Use “Adicionar” para registrar um
+          jejum passado.
+        </p>
+      ) : null}
 
       <div className="space-y-2.5">
         {visible.map((entry) => {
@@ -125,6 +155,35 @@ export function HistoryList({ entries, initialVisible = 3 }: HistoryListProps) {
                       </span>
                     </div>
                   ))}
+
+                  {onEdit || onDelete ? (
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      {onEdit ? (
+                        <button
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-primary font-label-badge text-label-badge transition-colors"
+                          onClick={() => onEdit(entry)}
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            edit
+                          </span>
+                          Editar
+                        </button>
+                      ) : null}
+                      {onDelete ? (
+                        <button
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-error/10 text-error font-label-badge text-label-badge transition-colors"
+                          onClick={() => onDelete(entry)}
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            delete
+                          </span>
+                          Excluir
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>

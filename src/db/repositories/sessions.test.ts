@@ -5,10 +5,15 @@ import { createTestDb, createTestTenant } from '../testing/helpers'
 import { findProtocolBySlug } from './protocols'
 import {
   countSessions,
+  deleteSession,
   endSession,
   findActiveSession,
+  findSessionById,
+  findSessionForProfile,
+  insertClosedSession,
   listSessions,
   startSession,
+  updateSession,
 } from './sessions'
 
 describe('sessions repository', () => {
@@ -169,5 +174,107 @@ describe('sessions repository', () => {
     expect(() =>
       endSession(db, 123, { endedAt: new Date(2026, 1, 24, 12, 0) }),
     ).toThrow(/session not found/i)
+  })
+
+  it('inserts a closed entry without disturbing the active fast', () => {
+    const active = startSession(db, {
+      profileId,
+      protocolId,
+      startedAt: new Date(2026, 1, 25, 10, 0),
+      targetHours: 16,
+    })
+
+    const manual = insertClosedSession(db, {
+      profileId,
+      protocolId,
+      startedAt: new Date(2026, 1, 23, 20, 0),
+      endedAt: new Date(2026, 1, 24, 12, 0),
+      targetHours: 16,
+      breakFood: 'Ovos mexidos',
+    })
+
+    expect(manual.status).toBe('completed')
+    expect(manual.breakFood).toBe('Ovos mexidos')
+    expect(manual.endedAt).toBe(new Date(2026, 1, 24, 12, 0).toISOString())
+    expect(findActiveSession(db, profileId)?.id).toBe(active.id)
+    expect(countSessions(db, profileId)).toBe(2)
+  })
+
+  it('labels a short manual entry as partial', () => {
+    const manual = insertClosedSession(db, {
+      profileId,
+      protocolId,
+      startedAt: new Date(2026, 1, 23, 20, 0),
+      endedAt: new Date(2026, 1, 24, 10, 0),
+      targetHours: 16,
+    })
+
+    expect(manual.status).toBe('partial')
+  })
+
+  it('recomputes the status when a history session is edited', () => {
+    const session = startSession(db, {
+      profileId,
+      protocolId,
+      startedAt: new Date(2026, 1, 23, 20, 0),
+      targetHours: 16,
+    })
+
+    endSession(db, session.id, {
+      endedAt: new Date(2026, 1, 24, 8, 0),
+    })
+
+    const updated = updateSession(db, session.id, profileId, {
+      startedAt: new Date(2026, 1, 23, 20, 0),
+      endedAt: new Date(2026, 1, 24, 12, 0),
+      breakFood: 'Salmão grelhado',
+      moodNote: 'Foco alto',
+      notes: 'Ajuste manual',
+    })
+
+    expect(updated?.status).toBe('completed')
+    expect(updated?.breakFood).toBe('Salmão grelhado')
+    expect(updated?.moodNote).toBe('Foco alto')
+    expect(updated?.notes).toBe('Ajuste manual')
+  })
+
+  it('scopes history updates and deletes to the owner tenant', () => {
+    const other = createTestTenant(db, { name: 'Outro tenant' })
+    const session = startSession(db, {
+      profileId: other.id,
+      protocolId,
+      startedAt: new Date(2026, 1, 23, 20, 0),
+      targetHours: 16,
+    })
+
+    endSession(db, session.id, { endedAt: new Date(2026, 1, 24, 12, 0) })
+
+    expect(findSessionForProfile(db, session.id, profileId)).toBeNull()
+    expect(
+      updateSession(db, session.id, profileId, {
+        startedAt: new Date(2026, 1, 23, 20, 0),
+        endedAt: new Date(2026, 1, 24, 12, 0),
+        breakFood: null,
+        moodNote: null,
+        notes: null,
+      }),
+    ).toBeNull()
+    expect(deleteSession(db, session.id, profileId)).toBe(false)
+    expect(findSessionById(db, session.id)?.id).toBe(session.id)
+  })
+
+  it('deletes an owned history session', () => {
+    const session = startSession(db, {
+      profileId,
+      protocolId,
+      startedAt: new Date(2026, 1, 23, 20, 0),
+      targetHours: 16,
+    })
+
+    endSession(db, session.id, { endedAt: new Date(2026, 1, 24, 12, 0) })
+
+    expect(deleteSession(db, session.id, profileId)).toBe(true)
+    expect(findSessionById(db, session.id)).toBeNull()
+    expect(countSessions(db, profileId)).toBe(0)
   })
 })

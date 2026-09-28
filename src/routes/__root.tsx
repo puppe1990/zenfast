@@ -11,6 +11,7 @@ import { useEffect } from 'react'
 import { AppHeader } from '#/components/AppHeader'
 import { BottomNav } from '#/components/BottomNav'
 import { OfflineBanner } from '#/components/OfflineBanner'
+import { THEME_INIT_SCRIPT } from '#/components/theme'
 import { canonicalLink, pageMetaFor, socialMeta } from '#/lib/site-meta'
 import { registerServiceWorker } from '#/pwa/register'
 import { getOrigin, getSession } from '#/server/actions'
@@ -103,9 +104,10 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html className="dark" lang="pt-BR">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container">
         {children}

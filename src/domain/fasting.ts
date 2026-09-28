@@ -17,6 +17,7 @@ export interface FastingProgress {
 
 export const MINUTE_TOLERANCE_HOURS = 1 / 60
 export const MAX_BACKDATE_HOURS = 72
+export const MIN_FAST_MINUTES = 1
 
 export function parseFastingStart(value: string, now: Date): Date {
   const start = new Date(value)
@@ -38,6 +39,38 @@ export function parseFastingStart(value: string, now: Date): Date {
   }
 
   return start
+}
+
+export interface FastingInterval {
+  startedAt: Date
+  endedAt: Date
+}
+
+export function parseFastingInterval(
+  startedAt: string,
+  endedAt: string,
+  now: Date,
+): FastingInterval {
+  const start = new Date(startedAt)
+  const end = new Date(endedAt)
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw new Error('Informe início e término válidos.')
+  }
+
+  if (start.getTime() > now.getTime()) {
+    throw new Error('O início do jejum não pode estar no futuro.')
+  }
+
+  if (end.getTime() > now.getTime()) {
+    throw new Error('O término do jejum não pode estar no futuro.')
+  }
+
+  if (end.getTime() - start.getTime() < MIN_FAST_MINUTES * 60_000) {
+    throw new Error('O término deve ser depois do início.')
+  }
+
+  return { startedAt: start, endedAt: end }
 }
 
 export function roundUpDurationLabel(hours: number): string {

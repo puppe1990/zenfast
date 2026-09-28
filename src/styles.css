@@ -149,7 +149,72 @@
   --spacing-space-xl: 2.5rem;
 }
 
+html.light {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-surface: #f7f4ee;
+  --color-surface-dim: #ece7dd;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2ede4;
+  --color-surface-container: #ebe5d9;
+  --color-surface-container-high: #e3dccd;
+  --color-surface-container-highest: #dbd3c2;
+  --color-surface-variant: #e0d8c8;
+  --color-on-surface: #1d1b17;
+  --color-on-surface-variant: #55504a;
+  --color-inverse-surface: #2f2c27;
+  --color-inverse-on-surface: #f4f0e8;
+  --color-outline: #8b857a;
+  --color-outline-variant: #cfc8ba;
+  --color-surface-tint: #b45309;
+  --color-background: #f7f4ee;
+  --color-on-background: #1d1b17;
+
+  /* Primary - Metabolic Amber (darkened for light surfaces) */
+  --color-primary: #b45309;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #ffb95f;
+  --color-on-primary-container: #3a2400;
+  --color-inverse-primary: #ffc174;
+  --color-primary-fixed: #ffddb8;
+  --color-primary-fixed-dim: #f59e0b;
+  --color-on-primary-fixed: #2a1700;
+  --color-on-primary-fixed-variant: #653e00;
+
+  /* Secondary - Nourishment Emerald */
+  --color-secondary: #006b4b;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #8bf3c5;
+  --color-on-secondary-container: #00291a;
+  --color-secondary-fixed: #6ffbbe;
+  --color-secondary-fixed-dim: #4edea3;
+  --color-on-secondary-fixed: #002113;
+  --color-on-secondary-fixed-variant: #005236;
+
+  /* Tertiary - Deep Cellular Violet */
+  --color-tertiary: #6a2fc7;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #e0d1ff;
+  --color-on-tertiary-container: #27005e;
+  --color-tertiary-fixed: #e9ddff;
+  --color-tertiary-fixed-dim: #d0bcff;
+  --color-on-tertiary-fixed: #23005c;
+  --color-on-tertiary-fixed-variant: #5516be;
+
+  /* Error */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #410002;
+}
+
 @layer base {
+  html {
+    color-scheme: dark;
+  }
+
   html,
   body {
     width: 100%;
