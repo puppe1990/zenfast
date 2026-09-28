@@ -98,7 +98,7 @@ function TimerScreen() {
   }
 
   return (
-    <main className="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-surface">
+    <main className="flex-1 flex flex-col relative w-full pt-header pb-28 bg-surface">
       <div className="flex flex-col w-full px-margin pb-space-xl gap-space-lg select-none">
         <ProtocolPill
           activeSession={dashboard.activeSession}

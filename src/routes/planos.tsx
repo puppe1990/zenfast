@@ -48,7 +48,7 @@ function ProtocolsScreen() {
   )
 
   return (
-    <main className="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-surface">
+    <main className="flex-1 flex flex-col relative w-full pt-header pb-28 bg-surface">
       <div className="flex flex-col w-full px-margin pb-space-xl gap-space-lg select-none">
         <div className="relative pt-space-sm">
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-20 bg-primary/10 rounded-full blur-3xl pointer-events-none" />

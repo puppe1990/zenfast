@@ -126,7 +126,7 @@ function RootLayout() {
 
   if (!session.authenticated) {
     return (
-      <main className="flex-1 flex flex-col relative w-full pt-16 pb-8 bg-surface">
+      <main className="flex-1 flex flex-col relative w-full pt-header pb-8 bg-surface">
         <Outlet />
       </main>
     )
