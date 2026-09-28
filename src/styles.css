@@ -254,6 +254,14 @@ html.light {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+@utility pt-header {
+  padding-top: calc(4rem + env(safe-area-inset-top, 0px));
+}
+
+@utility mt-header {
+  margin-top: calc(4rem + env(safe-area-inset-top, 0px));
+}
+
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }

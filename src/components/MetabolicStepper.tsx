@@ -1,4 +1,9 @@
+import { useState } from 'react'
+
 import { METABOLIC_STAGES } from '#/domain/metabolic'
+import type { MetabolicStage } from '#/domain/metabolic'
+
+import { Sheet } from './Sheet'
 
 export interface MetabolicStepperProps {
   stageIndex: number
@@ -12,6 +17,9 @@ export function MetabolicStepper({
   const activeIndex = Math.min(
     Math.max(stageIndex, 0),
     METABOLIC_STAGES.length - 1,
+  )
+  const [selectedStage, setSelectedStage] = useState<MetabolicStage | null>(
+    null,
   )
   const fillPercent =
     METABOLIC_STAGES.length > 1
@@ -41,10 +49,14 @@ export function MetabolicStepper({
           {METABOLIC_STAGES.map((stage, index) => {
             const isActive = index === activeIndex
             const isDone = index < activeIndex
+            const rangeText = isActive
+              ? `${stage.rangeLabel} • Agora`
+              : stage.rangeLabel
 
             return (
-              <div
-                className={`flex flex-col items-center gap-1.5 z-10 text-center ${
+              <button
+                aria-label={`${stage.label} — ${rangeText}. Toque para ver a explicação.`}
+                className={`group flex flex-col items-center gap-1.5 z-10 text-center rounded-2xl transition-transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                   isActive
                     ? 'w-28 scale-105'
                     : isDone
@@ -52,9 +64,12 @@ export function MetabolicStepper({
                       : 'w-24 opacity-60'
                 }`}
                 key={stage.id}
+                onClick={() => setSelectedStage(stage)}
+                title={`${stage.title} — ${stage.description}`}
+                type="button"
               >
                 <div
-                  className={`flex items-center justify-center ${
+                  className={`flex items-center justify-center transition-shadow ${
                     isActive
                       ? 'w-9 h-9 rounded-full bg-primary-container text-on-primary-container ring-4 ring-primary/20 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
                       : isDone
@@ -84,13 +99,34 @@ export function MetabolicStepper({
                       : 'font-body-sm text-on-surface-variant/70'
                   }`}
                 >
-                  {isActive ? `${stage.rangeLabel} • Agora` : stage.rangeLabel}
+                  {rangeText}
                 </span>
-              </div>
+              </button>
             )
           })}
         </div>
       </div>
+
+      <Sheet
+        description={selectedStage?.badge}
+        onClose={() => setSelectedStage(null)}
+        open={selectedStage !== null}
+        title={selectedStage?.title ?? ''}
+      >
+        {selectedStage ? (
+          <div className="space-y-space-md">
+            <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              {selectedStage.description}
+            </p>
+            <div className="flex items-center gap-2 font-label-caps text-label-caps text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px] text-primary">
+                schedule
+              </span>
+              {selectedStage.rangeLabel} de jejum
+            </div>
+          </div>
+        ) : null}
+      </Sheet>
     </div>
   )
 }

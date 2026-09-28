@@ -47,7 +47,7 @@ function ProfileScreen() {
   const totals = view.totals
 
   return (
-    <main className="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-surface">
+    <main className="flex-1 flex flex-col relative w-full pt-header pb-28 bg-surface">
       <div className="flex flex-col w-full px-margin pb-space-xl gap-space-lg">
         <section className="relative overflow-hidden rounded-lg bg-surface-container-high shadow-xl p-space-md">
           <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary-container/15 rounded-full blur-2xl pointer-events-none" />

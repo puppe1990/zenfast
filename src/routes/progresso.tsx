@@ -126,7 +126,7 @@ function ProgressScreen() {
       : null
 
   return (
-    <main className="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-surface">
+    <main className="flex-1 flex flex-col relative w-full pt-header pb-28 bg-surface">
       <div className="flex flex-col w-full px-margin pb-space-xl gap-space-lg">
         <div className="relative w-full pt-space-xs">
           <div className="flex items-center justify-between gap-3">
