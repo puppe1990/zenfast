@@ -52,6 +52,11 @@ export interface HistoryEntry {
   startedAtLabel: string
   endedAtLabel: string
   details: HistoryDetail[]
+  startedAt: string
+  endedAt: string
+  breakFood: string | null
+  moodNote: string | null
+  notes: string | null
 }
 
 export interface ProgressView {
@@ -198,6 +203,11 @@ export function buildProgressView(
         startedAtLabel: formatTime(session.startedAt),
         endedAtLabel: session.endedAt ? formatTime(session.endedAt) : '--:--',
         details: historyDetails(session, now, waterByDay),
+        startedAt: session.startedAt,
+        endedAt: session.endedAt ?? now.toISOString(),
+        breakFood: session.breakFood,
+        moodNote: session.moodNote,
+        notes: session.notes,
       } satisfies HistoryEntry
     })
 

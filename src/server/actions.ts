@@ -209,3 +209,47 @@ export const postCreateCustomProtocol = createServerFn({ method: 'POST' })
 
     return createCustomProtocol(data)
   })
+
+const historyTimestamp = z.string().min(1).max(40)
+const historyNote = z.string().max(200).optional()
+const historyText = z.string().max(120).optional()
+
+const historyFields = {
+  startedAt: historyTimestamp,
+  endedAt: historyTimestamp,
+  breakFood: historyText,
+  moodNote: historyText,
+  notes: historyNote,
+}
+
+export const postCreateHistoryEntry = createServerFn({ method: 'POST' })
+  .validator((data: Record<string, unknown>) =>
+    z.object(historyFields).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { createHistory } = await import('./runtime')
+
+    return createHistory(data)
+  })
+
+export const postUpdateHistoryEntry = createServerFn({ method: 'POST' })
+  .validator((data: Record<string, unknown>) =>
+    z
+      .object({ sessionId: z.number().int().positive(), ...historyFields })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { updateHistory } = await import('./runtime')
+
+    return updateHistory(data)
+  })
+
+export const postDeleteHistoryEntry = createServerFn({ method: 'POST' })
+  .validator((data: { sessionId: number }) =>
+    z.object({ sessionId: z.number().int().positive() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { removeHistory } = await import('./runtime')
+
+    return removeHistory(data.sessionId)
+  })

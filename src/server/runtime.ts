@@ -47,6 +47,11 @@ import {
 import { syncAchievements } from './services/achievements'
 import { buildDashboard } from './services/dashboard'
 import { applyGoalChange } from './services/goals'
+import {
+  createHistoryEntry,
+  deleteHistoryEntry,
+  updateHistoryEntry,
+} from './services/history'
 import { buildProfileView } from './services/profile'
 import { buildProgressView } from './services/progress'
 import { buildProtocolsView } from './services/protocols'
@@ -419,5 +424,56 @@ export function createCustomProtocol(input: CreateCustomProtocolInput) {
     )
 
     return activateProtocol(db, profile.id, protocol.id)
+  })
+}
+
+export interface CreateHistoryEntryRequest {
+  startedAt: string
+  endedAt: string
+  breakFood?: string | null
+  moodNote?: string | null
+  notes?: string | null
+}
+
+export function createHistory(input: CreateHistoryEntryRequest) {
+  return withDb((db) => {
+    const profile = requireProfile(db)
+    const now = new Date()
+    const entry = createHistoryEntry(db, profile.id, input, now)
+
+    syncAchievements(db, profile.id, now)
+
+    return entry
+  })
+}
+
+export interface UpdateHistoryEntryRequest {
+  sessionId: number
+  startedAt: string
+  endedAt: string
+  breakFood?: string | null
+  moodNote?: string | null
+  notes?: string | null
+}
+
+export function updateHistory(input: UpdateHistoryEntryRequest) {
+  return withDb((db) => {
+    const profile = requireProfile(db)
+    const now = new Date()
+    const { sessionId, ...rest } = input
+    const entry = updateHistoryEntry(db, profile.id, sessionId, rest, now)
+
+    syncAchievements(db, profile.id, now)
+
+    return entry
+  })
+}
+
+export function removeHistory(sessionId: number) {
+  return withDb((db) => {
+    const profile = requireProfile(db)
+
+    deleteHistoryEntry(db, profile.id, sessionId)
+    syncAchievements(db, profile.id, new Date())
   })
 }

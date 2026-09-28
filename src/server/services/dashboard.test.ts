@@ -97,17 +97,17 @@ describe('buildDashboard', () => {
     const first = startSession(db, {
       profileId: profile.id,
       protocolId: protocol.id,
-      startedAt: new Date(2026, 1, 22, 20, 0),
-      targetHours: 16,
-    })
-    endSession(db, first.id, { endedAt: new Date(2026, 1, 23, 12, 0) })
-    const second = startSession(db, {
-      profileId: profile.id,
-      protocolId: protocol.id,
       startedAt: new Date(2026, 1, 23, 20, 0),
       targetHours: 16,
     })
-    endSession(db, second.id, { endedAt: new Date(2026, 1, 24, 12, 0) })
+    endSession(db, first.id, { endedAt: new Date(2026, 1, 24, 12, 0) })
+    const second = startSession(db, {
+      profileId: profile.id,
+      protocolId: protocol.id,
+      startedAt: new Date(2026, 1, 24, 20, 0),
+      targetHours: 16,
+    })
+    endSession(db, second.id, { endedAt: new Date(2026, 1, 24, 23, 30) })
 
     const dashboard = buildDashboard(db, profile.id, now)
 

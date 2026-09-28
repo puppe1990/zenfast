@@ -11,6 +11,7 @@ import { RadialFastingTimer } from '#/components/RadialFastingTimer'
 import { Sheet } from '#/components/Sheet'
 import { useAction } from '#/components/useAction'
 import { MAX_BACKDATE_HOURS } from '#/domain/fasting'
+import { formatDateTimeInput } from '#/domain/format'
 import { MOOD_LEVELS } from '#/domain/mood'
 import type { MoodLevel } from '#/domain/types'
 import {
@@ -39,14 +40,6 @@ const BACKDATE_OPTIONS = [
   { label: '4h atrás', hoursAgo: 4 },
 ]
 
-function toLocalInputValue(date: Date): string {
-  const pad = (value: number) => String(value).padStart(2, '0')
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
 function TimerScreen() {
   const dashboard = Route.useLoaderData()
   const now = new Date(dashboard.now)
@@ -55,7 +48,7 @@ function TimerScreen() {
   const [moodSheetOpen, setMoodSheetOpen] = useState(false)
   const [breakFood, setBreakFood] = useState(BREAK_FOOD_SUGGESTIONS[0])
   const [startedAtInput, setStartedAtInput] = useState(() =>
-    toLocalInputValue(new Date()),
+    formatDateTimeInput(new Date()),
   )
   const [moodNoteInput, setMoodNoteInput] = useState('')
   const [moodLevel, setMoodLevel] = useState<MoodLevel>(
@@ -90,7 +83,7 @@ function TimerScreen() {
   const hasActiveFast = dashboard.activeSession !== null
 
   const openStartSheet = () => {
-    setStartedAtInput(toLocalInputValue(new Date()))
+    setStartedAtInput(formatDateTimeInput(new Date()))
     setStartSheetOpen(true)
   }
 
@@ -280,7 +273,7 @@ function TimerScreen() {
               key={option.label}
               onClick={() =>
                 setStartedAtInput(
-                  toLocalInputValue(
+                  formatDateTimeInput(
                     new Date(Date.now() - option.hoursAgo * 3_600_000),
                   ),
                 )
@@ -301,8 +294,8 @@ function TimerScreen() {
           <input
             className="w-full bg-surface-container-lowest rounded-2xl py-4 px-5 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
             id="start-at"
-            max={toLocalInputValue(new Date())}
-            min={toLocalInputValue(
+            max={formatDateTimeInput(new Date())}
+            min={formatDateTimeInput(
               new Date(Date.now() - MAX_BACKDATE_HOURS * 3_600_000),
             )}
             onChange={(event) => setStartedAtInput(event.target.value)}

@@ -4,6 +4,7 @@ import {
   MAX_BACKDATE_HOURS,
   computeFastingProgress,
   fastingDurationHours,
+  parseFastingInterval,
   parseFastingStart,
   roundUpDurationLabel,
   sessionMeetsGoal,
@@ -103,6 +104,68 @@ describe('parseFastingStart', () => {
     expect(() => parseFastingStart(tooOld.toISOString(), now)).toThrow(
       /anterior/i,
     )
+  })
+})
+
+describe('parseFastingInterval', () => {
+  const now = new Date(2026, 1, 25, 18, 0, 0)
+  const start = new Date(2026, 1, 24, 20, 0, 0)
+  const end = new Date(2026, 1, 25, 12, 0, 0)
+
+  it('parses a valid past interval', () => {
+    const interval = parseFastingInterval(
+      start.toISOString(),
+      end.toISOString(),
+      now,
+    )
+
+    expect(interval.startedAt.toISOString()).toBe(start.toISOString())
+    expect(interval.endedAt.toISOString()).toBe(end.toISOString())
+  })
+
+  it('rejects invalid dates', () => {
+    expect(() => parseFastingInterval('', end.toISOString(), now)).toThrow(
+      /válidos/i,
+    )
+    expect(() => parseFastingInterval(start.toISOString(), '', now)).toThrow(
+      /válidos/i,
+    )
+  })
+
+  it('rejects a start in the future', () => {
+    expect(() =>
+      parseFastingInterval(
+        new Date(2026, 1, 25, 19, 0).toISOString(),
+        new Date(2026, 1, 25, 20, 0).toISOString(),
+        now,
+      ),
+    ).toThrow(/início.*futuro/i)
+  })
+
+  it('rejects an end in the future', () => {
+    expect(() =>
+      parseFastingInterval(
+        start.toISOString(),
+        new Date(2026, 1, 25, 19, 0).toISOString(),
+        now,
+      ),
+    ).toThrow(/término.*futuro/i)
+  })
+
+  it('rejects an end before the start', () => {
+    expect(() =>
+      parseFastingInterval(end.toISOString(), start.toISOString(), now),
+    ).toThrow(/depois do início/i)
+  })
+
+  it('rejects an interval shorter than a minute', () => {
+    expect(() =>
+      parseFastingInterval(
+        start.toISOString(),
+        new Date(start.getTime() + 30_000).toISOString(),
+        now,
+      ),
+    ).toThrow(/depois do início/i)
   })
 })
 

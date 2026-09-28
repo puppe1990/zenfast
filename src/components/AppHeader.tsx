@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import { Avatar } from './Avatar'
+import { ThemeToggle } from './ThemeToggle'
 import { ZenFastLogo } from './ZenFastLogo'
 
 export interface AppHeaderProps {
@@ -29,6 +30,7 @@ export function AppHeader({ streakDays, profileName }: AppHeaderProps) {
               {streakDays} dias
             </span>
           </div>
+          <ThemeToggle />
           <Link
             aria-label="Perfil"
             className="w-11 h-11 flex items-center justify-center rounded-full p-0.5 transition-transform active:scale-95"

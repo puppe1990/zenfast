@@ -65,30 +65,28 @@ export function computeStreak(
   sessions: FastingSession[],
   now: Date,
 ): StreakStats {
-  const goalDays = new Set<string>()
+  const fastDays = new Set<string>()
 
   for (const session of sessions) {
-    if (sessionMeetsGoal(session, now)) {
-      goalDays.add(dayKey(sessionEndDate(session, now)))
-    }
+    fastDays.add(dayKey(new Date(session.startedAt)))
   }
 
-  if (goalDays.size === 0) {
+  if (fastDays.size === 0) {
     return { current: 0, record: 0 }
   }
 
   let cursor = startOfDay(now)
-  if (!goalDays.has(dayKey(cursor))) {
+  if (!fastDays.has(dayKey(cursor))) {
     cursor = addDays(cursor, -1)
   }
 
   let current = 0
-  while (goalDays.has(dayKey(cursor))) {
+  while (fastDays.has(dayKey(cursor))) {
     current += 1
     cursor = addDays(cursor, -1)
   }
 
-  const sortedDays = [...goalDays].sort()
+  const sortedDays = [...fastDays].sort()
   let record = 0
   let run = 0
   let previous: Date | null = null
@@ -98,7 +96,8 @@ export function computeStreak(
     const date = new Date(year, month - 1, day)
 
     run =
-      previous && date.getTime() - previous.getTime() === MS_PER_DAY
+      previous &&
+      Math.round((date.getTime() - previous.getTime()) / MS_PER_DAY) === 1
         ? run + 1
         : 1
     record = Math.max(record, run)
